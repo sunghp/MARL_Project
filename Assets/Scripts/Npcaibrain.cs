@@ -102,12 +102,15 @@ public class NPCAIBrain : MonoBehaviour
 
     void Update()
     {
+        // ML-Agents 모드: 에이전트가 직접 제어하므로 AI 브레인 비활성화
+        if (GetComponent<NPCAgent>() != null) return;
+
         // 함장 CaptainGun 참조 갱신 (타이밍 문제 해결)
         if (captainGun == null && RoleManager.Instance != null && RoleManager.Instance.IsCaptain(gameObject))
         {
             captainGun = GetComponent<CaptainGun>();
         }
-        
+
         // 함장만 처형 로직 실행
         if (RoleManager.Instance != null && RoleManager.Instance.IsCaptain(gameObject))
         {
@@ -889,16 +892,21 @@ public class NPCAIBrain : MonoBehaviour
     {
         // 알람 기억 초기화
         knownDamagedRooms.Clear();
-        
+
         // 의심 점수 초기화
         if (suspicionScores != null)
             suspicionScores.Clear();
-        
+
+        // 알람 목격 횟수 초기화
+        alarmWitnessCount.Clear();
+
         // 타겟 초기화
         sabotageTarget = null;
         currentDestination = null;
-        
+
+#if UNITY_EDITOR
         Debug.Log($"[리셋] {gameObject.name} AI Brain 초기화");
+#endif
     }
 }
     

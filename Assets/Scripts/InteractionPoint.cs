@@ -49,7 +49,9 @@ public class InteractionPoint : MonoBehaviour
             // 사보타주: 부수기
             float damage = GameManager.Instance.sabotageDamage;
             currentHealth = Mathf.Max(0f, currentHealth - damage);
-            Debug.Log($"💀 [부수기] {user.name}이(가) {roomName}을(를) 파괴! (안정도: {currentHealth}%)");
+#if UNITY_EDITOR
+            Debug.Log($"[부수기] {user.name}이(가) {roomName}을(를) 파괴! (안정도: {currentHealth}%)");
+#endif
 
             // 사보타주 감지 이벤트 발생 (함장 AI가 구독)
             OnSabotageDetected?.Invoke(user, roomName, transform.position);
@@ -67,7 +69,9 @@ public class InteractionPoint : MonoBehaviour
             float repair = GameManager.Instance.repairAmount;
             float prevHealth = currentHealth;
             currentHealth = Mathf.Min(maxHealth, currentHealth + repair);
-            Debug.Log($"🔧 [고치기] {user.name}이(가) {roomName}을(를) 수리! (안정도: {currentHealth}%)");
+#if UNITY_EDITOR
+            Debug.Log($"[고치기] {user.name}이(가) {roomName}을(를) 수리! (안정도: {currentHealth}%)");
+#endif
 
             // 30% 초과하면 알림 리셋 + 수리 완료 이벤트
             if (currentHealth > 30f && hasAlerted)
@@ -136,20 +140,15 @@ public class InteractionPoint : MonoBehaviour
 
     // ===== 방 리셋 =====
 
-    private float initialHealth = 100f;
-
-    void Awake()
-    {
-        initialHealth = currentHealth;
-    }
-
     public void ResetRoom()
     {
-        currentHealth = initialHealth;
+        currentHealth = maxHealth;
         isBeingUsed = false;
         currentUser = null;
         hasAlerted = false; // 알람 플래그도 리셋
         
+#if UNITY_EDITOR
         Debug.Log($"[리셋] {roomName} 안정도: {currentHealth}%");
+#endif
 }
 }

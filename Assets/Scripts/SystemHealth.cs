@@ -62,7 +62,9 @@ public class SystemHealth : MonoBehaviour
         }
         averageHealth = total / allRooms.Length;
 
+#if UNITY_EDITOR
         Debug.Log($"[시스템] 전체 평균 안정도: {averageHealth:F1}%");
+#endif
 
         // 이벤트 발생
         OnHealthChanged?.Invoke(averageHealth);
@@ -95,6 +97,7 @@ public class SystemHealth : MonoBehaviour
     void CheckWinConditions()
     {
         if (GameManager.Instance == null) return;
+        if (GameManager.Instance.IsGameOver()) return;
         if (GameManager.Instance.currentState != GameManager.GameState.Playing) return;
 
         // 사보타주 승리: 방 하나라도 0%
@@ -107,10 +110,10 @@ public class SystemHealth : MonoBehaviour
             }
         }
 
-        // 사보타주 승리: 전체 평균 30% 이하
-        if (averageHealth <= GameManager.Instance.locationAlertThreshold)
+        // 사보타주 승리: 전체 평균이 사보타주 승리 임계값 이하
+        if (averageHealth <= GameManager.Instance.sabotageWinThreshold)
         {
-            GameManager.Instance.SabotageWin($"전체 평균 안정도 {averageHealth:F1}% (30% 이하)");
+            GameManager.Instance.SabotageWin($"전체 평균 안정도 {averageHealth:F1}% ({GameManager.Instance.sabotageWinThreshold}% 이하)");
             return;
         }
 
@@ -143,8 +146,13 @@ public class SystemHealth : MonoBehaviour
 
     public void ResetHealth()
     {
+        shipStopped = false;
+        if (GameManager.Instance != null)
+            GameManager.Instance.SetShipStopped(false);
         UpdateAverageHealth();
+#if UNITY_EDITOR
         Debug.Log($"[시스템 리셋] 전체 평균 안정도: {averageHealth}%");
+#endif
     }
 
     // ===== Getter =====

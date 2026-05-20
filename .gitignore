@@ -16,3 +16,20 @@
 *.user
 .DS_Store
 Thumbs.db
+
+# ML-Agents 학습 결과 (체크포인트, TensorBoard 로그)
+results/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+*.egg-info/
+
+# ML 모델
+*.onnx
+
+# Jupyter
+.ipynb_checkpoints/

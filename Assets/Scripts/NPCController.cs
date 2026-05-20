@@ -1,8 +1,6 @@
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections.Generic;
-using Unity.VisualScripting;
-
 public class NPCController : MonoBehaviour
 {
     // ===== 컴포넌트 참조 =====
@@ -55,7 +53,85 @@ public class NPCController : MonoBehaviour
     [Header("=== 사보타주 진행 여부 ===")]
     public bool isSabotaging = false;
 
+    // ===== ML-Agents 모드 =====
+    private bool useMLAgents = false;
+
     // ===== ML-Agents 연동용 =====
+
+    /// <summary>
+    /// 임의 좌표로 이동 (카페 등 InteractionPoint가 아닌 위치)
+    /// </summary>
+    public void MoveToPosition(Vector3 position)
+    {
+        if (agent == null) return;
+        currentInteractionPoint = null;
+        agent.isStopped = false;
+        agent.SetDestination(position);
+        SetState(NPCState.Moving);
+    }
+
+    /// <summary>
+    /// 진행 중인 상호작용 즉시 취소
+    /// </summary>
+    public void CancelCurrentInteraction()
+    {
+        if (!isInteracting) return;
+
+        if (currentInteractionPoint != null)
+        {
+            currentInteractionPoint.CancelInteraction(gameObject);
+        }
+
+        isInteracting = false;
+        interactionTimer = 0f;
+        isSabotaging = false;
+        currentInteractionPoint = null;
+        agent.isStopped = false;
+        SetState(NPCState.Idle);
+
+        Debug.Log($"[ML] {gameObject.name} 상호작용 중단");
+    }
+
+    /// <summary>
+    /// 긴급 회피: 가장 가까운 캐릭터 반대 방향으로 이동
+    /// </summary>
+    public void Evade()
+    {
+        if (agent == null || GameManager.Instance == null) return;
+
+        // 진행 중인 상호작용 취소
+        if (isInteracting)
+            CancelCurrentInteraction();
+
+        // 가장 가까운 다른 캐릭터 찾기
+        GameObject nearest = null;
+        float nearestDist = float.MaxValue;
+
+        foreach (var character in GameManager.Instance.allCharacters)
+        {
+            if (character == gameObject || character == null || !character.activeInHierarchy)
+                continue;
+
+            float dist = Vector3.Distance(transform.position, character.transform.position);
+            if (dist < nearestDist)
+            {
+                nearestDist = dist;
+                nearest = character;
+            }
+        }
+
+        if (nearest != null)
+        {
+            // 반대 방향으로 일정 거리 이동
+            Vector3 awayDir = (transform.position - nearest.transform.position).normalized;
+            Vector3 evadeTarget = transform.position + awayDir * 8f;
+
+            agent.isStopped = false;
+            agent.SetDestination(evadeTarget);
+            SetState(NPCState.Moving);
+            currentInteractionPoint = null;
+        }
+    }
 
     public void MoveToRoom(InteractionPoint room)
     {
@@ -78,7 +154,7 @@ public class NPCController : MonoBehaviour
     {
         if (currentInteractionPoint != null && IsNearInteractionPoint())
         {
-            // 부수기 상호작용 시작
+            if (!currentInteractionPoint.TryStartInteraction(gameObject)) return;
             isSabotaging = true;
             StartInteraction();
         }
@@ -88,7 +164,7 @@ public class NPCController : MonoBehaviour
     {
         if (currentInteractionPoint != null && IsNearInteractionPoint())
         {
-            // 고치기 상호작용 시작
+            if (!currentInteractionPoint.TryStartInteraction(gameObject)) return;
             isSabotaging = false;
             StartInteraction();
         }
@@ -104,7 +180,14 @@ public class NPCController : MonoBehaviour
             agent = gameObject.AddComponent<NavMeshAgent>();
         }
 
-        // NPCAIBrain 가져오기 (없으면 추가)
+        // ML-Agents 에이전트가 있으면 AI Brain 자동 의사결정 비활성화
+        if (GetComponent<NPCAgent>() != null)
+        {
+            useMLAgents = true;
+            useScoreBasedAI = false;
+        }
+
+        // NPCAIBrain 가져오기 (ML-Agents 미사용 시에만 추가)
         aiBrain = GetComponent<NPCAIBrain>();
         if (aiBrain == null && useScoreBasedAI)
         {
@@ -201,6 +284,9 @@ public class NPCController : MonoBehaviour
     // ===== 상태별 처리 =====
     void HandleIdle()
     {
+        // ML-Agents 모드: 에이전트가 OnActionReceived로 직접 제어하므로 자동 의사결정 안함
+        if (useMLAgents) return;
+
         idleTimer -= Time.deltaTime;
 
         if (idleTimer <= 0f)
@@ -213,8 +299,8 @@ public class NPCController : MonoBehaviour
     {
         if (agent.pathPending) return;
 
-        // 추가: 이동 중 긴급 상황 체크
-        if (ShouldReconsider())
+        // ML-Agents 모드가 아닐 때만 자동 재결정
+        if (!useMLAgents && ShouldReconsider())
         {
             currentInteractionPoint = null;
             DecideNextAction();
@@ -224,9 +310,14 @@ public class NPCController : MonoBehaviour
         // 목적지 도착 체크
         if (agent.remainingDistance <= agent.stoppingDistance + 0.5f)
         {
-            // 상호작용 포인트에 도착했으면 상호작용 시작
-            if (currentInteractionPoint != null)
+            if (useMLAgents)
             {
+                // ML-Agents 모드: 도착만 알림, 상호작용은 에이전트가 별도 행동으로 결정
+                SetState(NPCState.Idle);
+            }
+            else if (currentInteractionPoint != null)
+            {
+                // 기존 AI: 상호작용 포인트에 도착했으면 상호작용 시작
                 TryStartInteraction();
             }
             else
@@ -242,8 +333,8 @@ public class NPCController : MonoBehaviour
     {
         if (agent.pathPending) return;
 
-        // 추가: 순찰 중 긴급 상황 체크
-        if (ShouldReconsider())
+        // ML-Agents 모드가 아닐 때만 자동 재결정
+        if (!useMLAgents && ShouldReconsider())
         {
             DecideNextAction();
             return;
@@ -440,33 +531,48 @@ public class NPCController : MonoBehaviour
         agent.isStopped = true;
         SetState(NPCState.Interacting);
 
+#if UNITY_EDITOR
         Debug.Log($"[NPC 상호작용 시작] {gameObject.name} → {currentInteractionPoint.roomName}");
+#endif
     }
 
     void CompleteInteraction()
     {
         if (currentInteractionPoint != null)
         {
-            bool isSaboteur = RoleManager.Instance.IsSaboteur(gameObject);
-            currentInteractionPoint.OnInteractionComplete(gameObject, isSaboteur);
+            // isSabotaging 플래그 사용: 에이전트의 행동 선택이 실제 결과에 반영됨
+            currentInteractionPoint.OnInteractionComplete(gameObject, isSabotaging);
+
+            // ML-Agents 보상 콜백
+            NPCAgent npcAgent = GetComponent<NPCAgent>();
+            if (npcAgent != null)
+            {
+                if (isSabotaging)
+                    npcAgent.OnSabotageComplete();
+                else
+                    npcAgent.OnRepairComplete();
+            }
         }
 
         isInteracting = false;
         interactionTimer = 0f;
+        isSabotaging = false;
         currentInteractionPoint = null;
 
         SetState(NPCState.Idle);
         idleTimer = Random.Range(minIdleTime, maxIdleTime);
 
+#if UNITY_EDITOR
         Debug.Log($"[NPC 상호작용 완료] {gameObject.name}");
+#endif
     }
 
     float GetInteractionTime()
     {
         if (GameManager.Instance == null) return 3f;
 
-        bool isSaboteur = RoleManager.Instance.IsSaboteur(gameObject);
-        return isSaboteur ? GameManager.Instance.sabotageTime : GameManager.Instance.repairTime;
+        // 역할이 아닌 실제 행동 선택(isSabotaging)에 따라 소요 시간 결정
+        return isSabotaging ? GameManager.Instance.sabotageTime : GameManager.Instance.repairTime;
     }
 
     // ===== 카페 소집 =====
@@ -523,6 +629,13 @@ public class NPCController : MonoBehaviour
             currentInteractionPoint.CancelInteraction(gameObject);
         }
 
+        // ML-Agents 사망 패널티
+        NPCAgent npcAgent = GetComponent<NPCAgent>();
+        if (npcAgent != null)
+        {
+            npcAgent.OnDeath();
+        }
+
         Debug.Log($"[NPC 사망] {gameObject.name}");
 
         GameManager.Instance.RemoveCharacter(gameObject);
@@ -541,6 +654,16 @@ public class NPCController : MonoBehaviour
     public bool IsInteracting() => isInteracting;
     public NPCState GetCurrentState() => currentState;
 
+    /// <summary>
+    /// 상호작용 진행률 반환 (0~1). 상호작용 중이 아니면 0.
+    /// </summary>
+    public float GetInteractionProgress()
+    {
+        if (!isInteracting) return 0f;
+        float requiredTime = GetInteractionTime();
+        return requiredTime > 0f ? Mathf.Clamp01(interactionTimer / requiredTime) : 0f;
+    }
+
     // ===== 외부에서 포인트 설정 =====
     public void SetInteractionPoints(List<Transform> points)
     {
@@ -557,18 +680,24 @@ public class NPCController : MonoBehaviour
     public void ResetNPC()
     {
         // 상태 초기화
+        isDead = false;
+        isSabotaging = false;
+        isInteracting = false;
         currentState = NPCState.Idle;
         idleTimer = 0f;
         interactionTimer = 0f;
         currentInteractionPoint = null;
-        
+
         // NavMeshAgent 정지
         if (agent != null)
         {
+            agent.isStopped = false;
             agent.ResetPath();
             agent.velocity = Vector3.zero;
         }
-        
+
+#if UNITY_EDITOR
         Debug.Log($"[리셋] {gameObject.name} NPC 상태 초기화");
+#endif
     }
 }

@@ -323,7 +323,32 @@ public class CaptainGun : MonoBehaviour
     public void EnableCaptainAbility()
     {
         isCaptain = true;
-        Debug.Log($"👑 [함장] {gameObject.name}이(가) 함장 능력을 얻었습니다. 총알: {remainingBullets}발");
+        Debug.Log($"[함장] {gameObject.name}이(가) 함장 능력을 얻었습니다. 총알: {remainingBullets}발");
+    }
+
+    // ===== ML-Agents 전용: 직접 사격 (회의 없이) =====
+    public bool TryExecuteTarget(GameObject target)
+    {
+        if (target == null || remainingBullets <= 0) return false;
+
+        remainingBullets--;
+
+        bool wasSaboteur = RoleManager.Instance != null && RoleManager.Instance.IsSaboteur(target);
+
+        NPCController npc = target.GetComponent<NPCController>();
+        if (npc != null) npc.Die();
+
+        OnExecution?.Invoke(target, wasSaboteur);
+
+        CheckWinAfterExecution(wasSaboteur);
+        return true;
+    }
+
+    // ===== 총알/상태 리셋 (에피소드 리셋용) =====
+    public void ResetGun()
+    {
+        remainingBullets = GameManager.Instance != null ? GameManager.Instance.captainBullets : 2;
+        isMeetingActive = false;
     }
 }
 

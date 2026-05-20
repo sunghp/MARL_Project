@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Unity.MLAgents;
 
 public class GameManager : MonoBehaviour
 {
@@ -40,8 +41,8 @@ public class GameManager : MonoBehaviour
     [Tooltip("위치 공지 임계값")]
     public float locationAlertThreshold = 30f;
 
-    [Tooltip("사보타주 승리 임계값")]
-    public float sabotageWinThreshold = 0f;
+    [Tooltip("사보타주 승리 임계값 (전체 평균 안정도)")]
+    public float sabotageWinThreshold = 30f;
 
     [Header("=== 상호작용 파라미터 ===")]
     [Tooltip("부수기 시간 (초)")]
@@ -94,6 +95,15 @@ public class GameManager : MonoBehaviour
     [Header("=== 게임 상태 ===")]
     private bool isGameOver = false;
 
+    // ===== ML-Agents 에피소드 관리 =====
+    private List<NPCAgent> allNPCAgents = new List<NPCAgent>();
+    private List<GameObject> allCharactersOriginal = new List<GameObject>(); // 원본 (사망해도 유지)
+
+    [Header("=== 에피소드 시간 제한 ===")]
+    [Tooltip("최대 에피소드 시간 (초). 초과 시 무승부→사보타주 승리 처리")]
+    public float maxEpisodeTime = 300f;
+    private float episodeTimer = 0f;
+
     // ===== ML-Agents 헬퍼 =====
 
     public bool IsGameOver()
@@ -108,11 +118,16 @@ public class GameManager : MonoBehaviour
 
     public float GetAliveHumanRatio()
     {
+        if (RoleManager.Instance == null) return 0f;
+
         int aliveHumans = 0;
         int totalHumans = 0;
-        
-        foreach (var character in allCharacters)
+
+        // 원본 리스트 기준으로 계산 (사망자 포함)
+        var sourceList = allCharactersOriginal.Count > 0 ? allCharactersOriginal : allCharacters;
+        foreach (var character in sourceList)
         {
+            if (character == null) continue;
             if (!RoleManager.Instance.IsSaboteur(character))
             {
                 totalHumans++;
@@ -120,17 +135,35 @@ public class GameManager : MonoBehaviour
                     aliveHumans++;
             }
         }
-        
+
         return totalHumans > 0 ? (float)aliveHumans / totalHumans : 0f;
     }
 
-    // 게임 종료 시 모든 에이전트에게 알림
+    // 게임 종료 시 모든 에이전트에게 알림 + 동기화 리셋
     public void NotifyGameEnd(bool humanWin)
     {
-        NPCAgent[] agents = FindObjectsOfType<NPCAgent>();
-        foreach (var agent in agents)
+        // 1. 죽은 에이전트 재활성화 (EndEpisode를 받을 수 있도록)
+        foreach (var agent in allNPCAgents)
         {
-            agent.OnGameEnd(humanWin);
+            if (agent != null && !agent.gameObject.activeInHierarchy)
+                agent.gameObject.SetActive(true);
+        }
+
+        // 2. 보상 부여 (아직 EndEpisode 안함)
+        foreach (var agent in allNPCAgents)
+        {
+            if (agent != null)
+                agent.OnGameEnd(humanWin);
+        }
+
+        // 3. 게임 상태 리셋 (새 에피소드 준비)
+        ResetGame();
+
+        // 4. EndEpisode 일괄 호출 → OnEpisodeBegin이 리셋된 상태로 실행됨
+        foreach (var agent in allNPCAgents)
+        {
+            if (agent != null)
+                agent.EndEpisode();
         }
     }
 
@@ -158,6 +191,13 @@ public class GameManager : MonoBehaviour
         if (currentState == GameState.Playing)
         {
             UpdateShipProgress();
+
+            // 에피소드 시간 제한 (무한 에피소드 방지)
+            episodeTimer += Time.deltaTime;
+            if (episodeTimer >= maxEpisodeTime)
+            {
+                SabotageWin("에피소드 시간 초과");
+            }
         }
     }
 
@@ -193,6 +233,19 @@ public class GameManager : MonoBehaviour
 
         Debug.Log($"캐릭터 수집 완료: {allCharacters.Count}명");
 
+        // ML-Agents: NPCAgent 참조 수집 (사망해도 유지, 에피소드 관리용)
+        allNPCAgents.Clear();
+        foreach (var character in allCharacters)
+        {
+            NPCAgent npcAgent = character.GetComponent<NPCAgent>();
+            if (npcAgent != null)
+                allNPCAgents.Add(npcAgent);
+        }
+        Debug.Log($"[ML-Agents] NPCAgent {allNPCAgents.Count}개 등록");
+
+        // 원본 캐릭터 리스트 보존 (에피소드 리셋 시 복원용)
+        allCharactersOriginal = new List<GameObject>(allCharacters);
+
         // 역할 배정
         if (RoleManager.Instance != null && allCharacters.Count > 0)
         {
@@ -224,37 +277,43 @@ public class GameManager : MonoBehaviour
     // ===== 승리 처리 =====
     public void HumanWin(string reason)
     {
+        if (isGameOver) return;  // 중복 호출 방지
+        isGameOver = true;
         currentState = GameState.HumanWin;
         Debug.Log($"========== 인간 승리! ==========");
         Debug.Log($"이유: {reason}");
+        NotifyGameEnd(true);
     }
 
     public void SabotageWin(string reason)
     {
+        if (isGameOver) return;  // 중복 호출 방지
+        isGameOver = true;
         currentState = GameState.SabotageWin;
         Debug.Log($"========== 사보타주 승리! ==========");
         Debug.Log($"이유: {reason}");
+        NotifyGameEnd(false);
     }
 
     // ===== 캐릭터 관리 =====
     public void RegisterCharacter(GameObject character, bool isSaboteur, bool isCaptain)
     {
-
         if (isCaptain)
         {
             captain = character;
-            Debug.Log($"[등록] 함장: {character.name}");
         }
         else if (isSaboteur)
         {
             saboteurs.Add(character);
-            Debug.Log($"[등록] 사보타주: {character.name}");
         }
         else
         {
             humans.Add(character);
-            Debug.Log($"[등록] 인간: {character.name}");
         }
+#if UNITY_EDITOR
+        string role = isCaptain ? "함장" : (isSaboteur ? "사보타주" : "인간");
+        Debug.Log($"[등록] {role}: {character.name}");
+#endif
     }
 
     public void RemoveCharacter(GameObject character)
@@ -270,7 +329,9 @@ public class GameManager : MonoBehaviour
         saboteurs.Remove(character);
         humans.Remove(character);
 
+#if UNITY_EDITOR
         Debug.Log($"[제거] {character.name}");
+#endif
     }
 
     // ===== Getter 메서드 =====
@@ -296,10 +357,22 @@ public class GameManager : MonoBehaviour
     public void ResetGame()
     {
         Debug.Log("========== 게임 리셋 ==========");
-        
-        // 1. 게임 상태 초기화
-        isGameOver = false;
+
+        // 0. ML-Agents environment_parameters에서 밸런스 파라미터 읽기
+        LoadEnvironmentParameters();
+
+        // 1. 게임 상태 초기화 + 캐릭터 리스트 복원
+        // isGameOver는 리셋 완료 후 마지막에 false로 (리셋 중 CheckWinConditions 오발 방지)
+        currentState = GameState.Preparing;
         currentDistance = 0f;
+        shipStopped = false;
+        episodeTimer = 0f;
+
+        // 원본에서 allCharacters 복원 (RemoveCharacter로 빠진 캐릭터 복구)
+        allCharacters = new List<GameObject>(allCharactersOriginal);
+        saboteurs.Clear();
+        humans.Clear();
+        captain = null;
         
         // 2. 모든 InteractionPoint 안정도 초기화
         InteractionPoint[] allRooms = FindObjectsOfType<InteractionPoint>();
@@ -349,6 +422,13 @@ public class GameManager : MonoBehaviour
                 {
                     brain.ResetBrain();
                 }
+
+                // CaptainGun 리셋 (이전 에피소드 함장의 잔여 상태 초기화)
+                CaptainGun gun = character.GetComponent<CaptainGun>();
+                if (gun != null)
+                {
+                    gun.ResetGun();
+                }
             }
         }
         
@@ -358,10 +438,32 @@ public class GameManager : MonoBehaviour
             RoleManager.Instance.ResetRoles();
             RoleManager.Instance.AssignRoles(allCharacters);
         }
-        
+
+        // 6. 모든 초기화 완료 후 게임 시작 (이 시점에서야 CheckWinConditions 허용)
+        isGameOver = false;
+        currentState = GameState.Playing;
+
         Debug.Log("========== 게임 시작 ==========");
     }
 
     [Header("스폰 설정")]
     public Transform cafeSpawnPoint; // Inspector에서 카페 위치 할당
+
+    // ===== ML-Agents 밸런스 파라미터 연동 =====
+    void LoadEnvironmentParameters()
+    {
+        var envParams = Academy.Instance.EnvironmentParameters;
+
+        totalDistance       = envParams.GetWithDefault("total_distance", totalDistance);
+        shipSpeed           = envParams.GetWithDefault("ship_speed", shipSpeed);
+        shipStopThreshold   = envParams.GetWithDefault("ship_stop_threshold", shipStopThreshold);
+        sabotageWinThreshold = envParams.GetWithDefault("sabotage_win_threshold", sabotageWinThreshold);
+        sabotageDamage      = envParams.GetWithDefault("sabotage_damage", sabotageDamage);
+        repairAmount        = envParams.GetWithDefault("repair_amount", repairAmount);
+        sabotageTime        = envParams.GetWithDefault("sabotage_time", sabotageTime);
+        repairTime          = envParams.GetWithDefault("repair_time", repairTime);
+        moveSpeed           = envParams.GetWithDefault("move_speed", moveSpeed);
+        visionRange         = envParams.GetWithDefault("vision_range", visionRange);
+        maxEpisodeTime      = envParams.GetWithDefault("max_episode_time", maxEpisodeTime);
+    }
 }
