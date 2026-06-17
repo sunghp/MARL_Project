@@ -11,6 +11,7 @@ public class InteractionPoint : MonoBehaviour
     [Header("=== 방 안정도 ===")]
     public float maxHealth = 100f;
     [SerializeField] private float currentHealth;
+    [SerializeField] private float initialHealth;
     [SerializeField] private bool hasAlerted = false;  // 30% 알림 여부
 
     // ===== 상태 =====
@@ -30,9 +31,16 @@ public class InteractionPoint : MonoBehaviour
     public delegate void RoomRepairedEvent(string roomName);
     public static event RoomRepairedEvent OnRoomRepaired;
 
+
+    void Awake()
+    {
+        
+    }
+    
     void Start()
     {
         currentHealth = maxHealth;
+        initialHealth = maxHealth;
     }
 
     // ===== 상호작용 완료 처리 =====

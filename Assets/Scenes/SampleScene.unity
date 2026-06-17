@@ -2977,15 +2977,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   currentState: 0
-  totalDistance: 3000
+  totalDistance: 1000
   shipSpeed: 10
   stoppedSpeed: 0
   maxSystemHealth: 100
   shipStopThreshold: 50
   locationAlertThreshold: 30
-  sabotageWinThreshold: 0
-  sabotageTime: 5
-  sabotageDamage: 15
+  sabotageWinThreshold: 30
+  sabotageTime: 3
+  sabotageDamage: 10
   repairTime: 5
   repairAmount: 15
   moveSpeed: 5
@@ -2993,7 +2993,7 @@ MonoBehaviour:
   sabotageCount: 2
   humanCount: 3
   captainBullets: 2
-  cafePosition: {fileID: 833527562}
+  cafePosition: {fileID: 0}
   currentDistance: 0
   shipStopped: 0
   player: {fileID: 0}
@@ -3001,6 +3001,7 @@ MonoBehaviour:
   allCharacters: []
   saboteurs: []
   humans: []
+  maxEpisodeTime: 300
   cafeSpawnPoint: {fileID: 0}
 --- !u!4 &1214160767
 Transform:
@@ -3068,6 +3069,10 @@ PrefabInstance:
     - target: {fileID: 2772531330439405067, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
       propertyPath: m_Name
       value: NPC 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 9069652367387896264, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
+      propertyPath: m_BehaviorType
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3159,6 +3164,10 @@ PrefabInstance:
     - target: {fileID: 2772531330439405067, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
       propertyPath: m_Name
       value: NPC 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 9069652367387896264, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
+      propertyPath: m_BehaviorType
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3853,6 +3862,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: NPC 5
       objectReference: {fileID: 0}
+    - target: {fileID: 9069652367387896264, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
+      propertyPath: m_BehaviorType
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3938,6 +3951,10 @@ PrefabInstance:
     - target: {fileID: 2772531330439405067, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
       propertyPath: m_Name
       value: NPC 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 9069652367387896264, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
+      propertyPath: m_BehaviorType
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -4070,6 +4087,10 @@ PrefabInstance:
     - target: {fileID: 2772531330439405067, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
       propertyPath: m_Name
       value: NPC 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 9069652367387896264, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
+      propertyPath: m_BehaviorType
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -4228,9 +4249,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   remainingBullets: 0
   isMeetingActive: 0
-  crosshairUI: {fileID: 315920929}
+  crosshairUI: {fileID: 0}
   circleRadius: 3
-  cafeCenter: {fileID: 833527562}
+  cafeCenter: {fileID: 0}
 --- !u!1 &1729117778
 GameObject:
   m_ObjectHideFlags: 0
@@ -5273,6 +5294,10 @@ PrefabInstance:
     - target: {fileID: 2772531330439405067, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
       propertyPath: m_Name
       value: NPC 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9069652367387896264, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
+      propertyPath: m_BehaviorType
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
