@@ -94,6 +94,11 @@ public class NPCAgent : Agent
 
     public override void CollectObservations(VectorSensor sensor)
     {
+        if (roleManager == null) roleManager = RoleManager.Instance;
+        if (roleManager != null) {
+            isSaboteur = roleManager.IsSaboteur(gameObject);
+            isCaptain  = roleManager.IsCaptain(gameObject);
+        }
         // ===== 1. 자기 정보 (5) =====
         sensor.AddObservation(isSaboteur ? 1f : 0f);           // 1
         sensor.AddObservation(isCaptain ? 1f : 0f);            // 1
@@ -168,7 +173,7 @@ public class NPCAgent : Agent
 
     public override void OnActionReceived(ActionBuffers actions)
     {
-        if (gameManager == null || gameManager.IsGameOver()) return;
+        if (npcController == null || gameManager == null || gameManager.IsGameOver()) return;
 
         int roomChoice = actions.DiscreteActions[0];        // 0~7: 방 선택, 8: 대기
         int interactionChoice = actions.DiscreteActions[1]; // 0: 없음, 1: 부수기, 2: 고치기, 3: 사격

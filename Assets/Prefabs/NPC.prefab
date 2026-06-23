@@ -12,11 +12,11 @@ GameObject:
   - component: {fileID: 5523603950705663006}
   - component: {fileID: 205119717176389151}
   - component: {fileID: 3795168613789445784}
-  - component: {fileID: 4720536023078726807}
   - component: {fileID: 9135644261872266711}
   - component: {fileID: 7449068237837558539}
   - component: {fileID: 9069652367387896264}
   - component: {fileID: 4590168887936766367}
+  - component: {fileID: 5303514530585715340}
   m_Layer: 0
   m_Name: NPC
   m_TagString: NPC
@@ -112,32 +112,6 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &4720536023078726807
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2772531330439405067}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f997e4ce8f0c3b04f9542e09d9258bb3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  patrolPoints:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  interactionPoints: []
-  currentState: 0
-  isDead: 0
-  useScoreBasedAI: 1
-  interactionRange: 5
-  minIdleTime: 1
-  maxIdleTime: 3
-  decisionInterval: 2
 --- !u!195 &9135644261872266711
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -176,12 +150,12 @@ MonoBehaviour:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
   MaxStep: 0
-  decisionInterval: 0.5
   winReward: 10
   loseReward: -10
   sabotageReward: 0.5
   repairReward: 0.5
   healthChangeRewardScale: 0.01
+  mapSize: 50
 --- !u!114 &9069652367387896264
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -206,7 +180,7 @@ MonoBehaviour:
     hasUpgradedBrainParametersWithActionSpec: 1
   m_Model: {fileID: 0}
   m_InferenceDevice: 0
-  m_BehaviorType: 1
+  m_BehaviorType: 0
   m_BehaviorName: TheThing
   TeamId: 0
   m_UseChildSensors: 1
@@ -224,5 +198,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a5c9d521e5ef4759a8246a07d52221e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  DecisionPeriod: 10
+  DecisionPeriod: 20
   TakeActionsBetweenDecisions: 1
+--- !u!114 &5303514530585715340
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2772531330439405067}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f997e4ce8f0c3b04f9542e09d9258bb3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  patrolPoints: []
+  interactionPoints: []
+  currentState: 0
+  isDead: 0
+  useScoreBasedAI: 1
+  interactionRange: 2
+  minIdleTime: 1
+  maxIdleTime: 3
+  decisionInterval: 2
+  isSabotaging: 0

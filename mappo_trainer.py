@@ -20,11 +20,13 @@ import torch.optim as optim
 import numpy as np
 import os
 import time
+import yaml
 from collections import defaultdict
 from torch.utils.tensorboard import SummaryWriter
 
 from mlagents_envs.environment import UnityEnvironment
 from mlagents_envs.side_channel.engine_configuration_channel import EngineConfigurationChannel
+from mlagents_envs.side_channel.environment_parameters_channel import EnvironmentParametersChannel
 from mlagents_envs.base_env import ActionTuple
 
 
@@ -35,6 +37,7 @@ from mlagents_envs.base_env import ActionTuple
 CONFIG = {
     # === 환경 ===
     "env_path": "Builds/Linux/THe_thing.x86_64",
+    "balance_yaml": "TheThing.yaml",   # 게임 밸런스 파라미터 yaml (environment_parameters 블록을 읽어 Unity에 주입)
     "no_graphics": True,          # 헤드리스 모드 (화면 없이)
     "time_scale": 20.0,           # 게임 속도 배율 (높을수록 빠름)
 
@@ -53,7 +56,7 @@ CONFIG = {
     # === PPO 하이퍼파라미터 ===
     "lr_actor": 3e-4,
     "lr_critic": 3e-4,
-    "gamma": 0.99,                # 할인율
+    "gamma": 0.995,               # 할인율 (긴 에피소드 + 끝보상 환경이라 0.99보다 길게)
     "gae_lambda": 0.95,           # GAE lambda
     "clip_epsilon": 0.2,          # PPO 클리핑
     "entropy_coef": 0.01,         # 엔트로피 보너스 (탐색 장려)
@@ -613,12 +616,30 @@ class MAPPOTrainer:
         print("=" * 50)
 
         channel = EngineConfigurationChannel()
+        param_channel = EnvironmentParametersChannel()
+
+        # --- 게임 밸런스 파라미터 로드 (yaml의 environment_parameters 블록) ---
+        env_params = {}
+        balance_path = config.get("balance_yaml")
+        if balance_path and os.path.exists(balance_path):
+            with open(balance_path, "r", encoding="utf-8") as f:
+                loaded = yaml.safe_load(f) or {}
+            env_params = loaded.get("environment_parameters", {}) or {}
+            print(f"[밸런스] {balance_path}에서 {len(env_params)}개 파라미터 로드")
+        else:
+            print(f"[밸런스] yaml을 찾지 못함({balance_path}) → Unity Inspector 기본값 사용")
+
         env = UnityEnvironment(
             file_name=config["env_path"],
-            side_channels=[channel],
+            side_channels=[channel, param_channel],
             no_graphics=config["no_graphics"],
         )
         channel.set_configuration_parameters(time_scale=config["time_scale"])
+
+        # --- 밸런스 파라미터 주입 → Unity GameManager.LoadEnvironmentParameters()가 받음 ---
+        for key, val in env_params.items():
+            param_channel.set_float_parameter(key, float(val))
+            print(f"  - {key} = {float(val)}")
 
         env.reset()
 
