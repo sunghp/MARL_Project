@@ -240,8 +240,6 @@ public class NPCAgent : Agent
             AddReward(humanWin ? loseReward : winReward);
         else
             AddReward(humanWin ? winReward : loseReward);
-
-        EndEpisode();
     }
 
     public void OnDeath()

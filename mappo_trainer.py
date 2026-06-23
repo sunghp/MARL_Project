@@ -25,6 +25,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from mlagents_envs.environment import UnityEnvironment
 from mlagents_envs.side_channel.engine_configuration_channel import EngineConfigurationChannel
+from mlagents_envs.base_env import ActionTuple
 
 
 # ================================================================
@@ -33,7 +34,7 @@ from mlagents_envs.side_channel.engine_configuration_channel import EngineConfig
 
 CONFIG = {
     # === 환경 ===
-    "env_path": "Builds/Linux/The thing.x86_64",
+    "env_path": "Builds/Linux/THe_thing.x86_64",
     "no_graphics": True,          # 헤드리스 모드 (화면 없이)
     "time_scale": 20.0,           # 게임 속도 배율 (높을수록 빠름)
 
@@ -638,6 +639,7 @@ class MAPPOTrainer:
         # --- 학습 루프 ---
         steps_since_update = 0
         episode_start_time = time.time()
+        terminated_agents = set()
 
         try:
             while self.total_steps < config["total_timesteps"]:
@@ -658,10 +660,21 @@ class MAPPOTrainer:
                         self.buffers[agent_id].rewards[-1] += reward
                         self.buffers[agent_id].dones[-1] = 1.0
 
+                    terminated_agents.add(agent_id)
+
                 # ---- 에피소드 종료 감지 ----
-                # 모든 에이전트가 terminal이면 에피소드 끝
-                if len(decision_steps) == 0 and len(terminal_steps) > 0:
+                # 등록된 에이전트 전원이 terminated이거나, decision이 0인데 terminal이 있으면 종료
+                all_known_done = (
+                    len(self.agent_roles) > 0
+                    and set(self.agent_roles.keys()).issubset(terminated_agents)
+                )
+                if all_known_done or (len(decision_steps) == 0 and len(terminal_steps) > 0):
                     self.episode_count += 1
+
+                    # 남은 버퍼로 마지막 업데이트
+                    has_data = any(len(buf) > 0 for buf in self.buffers.values())
+                    if has_data:
+                        self.update()
 
                     # 통계 기록
                     total_ep_reward = sum(self.episode_rewards.values())
@@ -690,7 +703,10 @@ class MAPPOTrainer:
 
                     # 초기화
                     self.episode_rewards.clear()
+                    self.buffers.clear()
+                    terminated_agents.clear()
                     episode_start_time = time.time()
+                    steps_since_update = 0
 
                     # 환경 리셋
                     env.reset()
@@ -760,20 +776,24 @@ class MAPPOTrainer:
                     if agent_id in actions_dict:
                         action_array[i] = actions_dict[agent_id]
 
-                env.set_actions(behavior_name, action_array)
+                action_tuple = ActionTuple(discrete=action_array)
+                env.set_actions(behavior_name, action_tuple)
                 env.step()
 
                 self.total_steps += len(decision_steps)
                 steps_since_update += len(decision_steps)
 
                 # ---- 업데이트 체크 ----
-                min_buffer_len = min(
-                    (len(buf) for buf in self.buffers.values() if len(buf) > 0),
-                    default=0
-                )
-                if min_buffer_len >= config["rollout_length"]:
-                    self.update()
-                    steps_since_update = 0
+                # 살아있는 에이전트 기준으로만 판단 (사망 에이전트의 짧은 버퍼가 블로킹하지 않도록)
+                living_agents = set(self.agent_roles.keys()) - terminated_agents
+                if living_agents:
+                    living_buf_lens = [
+                        len(self.buffers[aid]) for aid in living_agents
+                        if len(self.buffers[aid]) > 0
+                    ]
+                    if living_buf_lens and min(living_buf_lens) >= config["rollout_length"]:
+                        self.update()
+                        steps_since_update = 0
 
         except KeyboardInterrupt:
             print("\n[중단] 학습이 중단되었습니다.")
