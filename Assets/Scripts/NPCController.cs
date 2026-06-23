@@ -138,6 +138,7 @@ public class NPCController : MonoBehaviour
         if (room == null || agent == null) return;
         
         currentInteractionPoint = room;
+        agent.isStopped = false;
         agent.SetDestination(room.transform.position);
         SetState(NPCState.Moving);
     }

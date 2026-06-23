@@ -1584,7 +1584,7 @@ MonoBehaviour:
   m_OverrideVoxelSize: 0
   m_VoxelSize: 0.16666667
   m_MinRegionArea: 2
-  m_NavMeshData: {fileID: 23800000, guid: 10e2bd9dad32b00428f363a6d5938e60, type: 2}
+  m_NavMeshData: {fileID: 23800000, guid: d7e80508873e3ee46a9c3a99031b895a, type: 2}
   m_BuildHeightMesh: 0
 --- !u!1 &503875428 stripped
 GameObject:
@@ -3032,7 +3032,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1799040391136138044, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.95
+      value: 0.87000006
       objectReference: {fileID: 0}
     - target: {fileID: 1799040391136138044, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
       propertyPath: m_LocalPosition.z
@@ -3128,7 +3128,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1799040391136138044, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.95
+      value: 0.87000006
       objectReference: {fileID: 0}
     - target: {fileID: 1799040391136138044, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
       propertyPath: m_LocalPosition.z
@@ -3734,7 +3734,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1799040391136138044, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.95
+      value: 0.87000006
       objectReference: {fileID: 0}
     - target: {fileID: 1799040391136138044, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
       propertyPath: m_LocalPosition.z
@@ -3825,7 +3825,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1799040391136138044, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.95
+      value: 0.87000006
       objectReference: {fileID: 0}
     - target: {fileID: 1799040391136138044, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
       propertyPath: m_LocalPosition.z
@@ -3962,7 +3962,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1799040391136138044, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.95
+      value: 0.87000006
       objectReference: {fileID: 0}
     - target: {fileID: 1799040391136138044, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
       propertyPath: m_LocalPosition.z
@@ -5123,7 +5123,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1799040391136138044, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.95
+      value: 0.87
       objectReference: {fileID: 0}
     - target: {fileID: 1799040391136138044, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
       propertyPath: m_LocalPosition.z
@@ -5161,6 +5161,18 @@ PrefabInstance:
       propertyPath: m_Name
       value: NPC 1
       objectReference: {fileID: 0}
+    - target: {fileID: 5303514530585715340, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
+      propertyPath: patrolPoints.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5303514530585715340, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
+      propertyPath: patrolPoints.Array.data[0]
+      value: 
+      objectReference: {fileID: 901351094}
+    - target: {fileID: 9069652367387896264, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
+      propertyPath: m_BehaviorType
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -5188,7 +5200,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 219851612946302360, guid: e047aec929e73e94f9b0a4ed9becfbd7, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.564018
+      value: 1.4230039
       objectReference: {fileID: 0}
     - target: {fileID: 219851612946302360, guid: e047aec929e73e94f9b0a4ed9becfbd7, type: 3}
       propertyPath: m_LocalPosition.z
