@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using Unity.MLAgents;
+using Unity.AI.Navigation;
 
 public class GameManager : MonoBehaviour
 {
@@ -170,6 +171,12 @@ public class GameManager : MonoBehaviour
     // ===== Unity 생명주기 =====
     void Awake()
     {
+        var surface = FindObjectOfType<NavMeshSurface>();
+        if (surface != null)
+        {
+            surface.BuildNavMesh();
+            Debug.Log("[NavMesh] 런타임 베이크 완료");
+        }
         if (Instance == null)
         {
             Instance = this;
