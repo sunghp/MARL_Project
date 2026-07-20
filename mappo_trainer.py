@@ -36,8 +36,8 @@ from mlagents_envs.base_env import ActionTuple
 
 CONFIG = {
     # === 환경 ===
-    "env_path": "Builds/Linux/THe_thing.x86_64",
-    "balance_yaml": "TheThing.yaml",   # 게임 밸런스 파라미터 yaml (environment_parameters 블록을 읽어 Unity에 주입)
+    "env_path": "Builds/Linux/The_thing.x86_64",
+    "balance_yaml": "config/TheThing.yaml",   # 게임 밸런스 파라미터 yaml (environment_parameters 블록을 읽어 Unity에 주입)
     "no_graphics": True,          # 헤드리스 모드 (화면 없이)
     "time_scale": 20.0,           # 게임 속도 배율 (높을수록 빠름)
 
@@ -385,10 +385,11 @@ class MAPPOTrainer:
             max_size = self.config["max_saboteur_team"]
 
         # 해당 팀 에이전트들의 관측 수집
+        # [수정] agent_id 순으로 정렬 → 팀원이 죽어도 슬롯 순서가 흔들리지 않음
         team_observations = []
-        for agent_id, obs in all_agent_obs.items():
+        for agent_id in sorted(all_agent_obs.keys()):
             if agent_id in self.agent_teams and self.agent_teams[agent_id] == team:
-                team_observations.append(obs)
+                team_observations.append(all_agent_obs[agent_id])
 
         # 패딩
         result = np.zeros(max_size * obs_dim, dtype=np.float32)
@@ -485,6 +486,7 @@ class MAPPOTrainer:
 
             actor = self.actors[role]
             optimizer = self.actor_optimizers[role]
+            loss_acc, ent_acc, n_batches = 0.0, 0.0, 0
 
             for _ in range(config["ppo_epochs"]):
                 # 미니배치 생성
@@ -520,6 +522,14 @@ class MAPPOTrainer:
                     nn.utils.clip_grad_norm_(actor.parameters(), config["max_grad_norm"])
                     optimizer.step()
 
+                    loss_acc += actor_loss.item()
+                    ent_acc += entropy.mean().item()
+                    n_batches += 1
+
+            if n_batches > 0:
+                self.writer.add_scalar(f"loss/actor_{role}", loss_acc / n_batches, self.total_steps)
+                self.writer.add_scalar(f"policy/entropy_{role}", ent_acc / n_batches, self.total_steps)
+
         # --- Critic 업데이트 (팀별) ---
         for team, data_list in team_data.items():
             if len(data_list) == 0:
@@ -530,6 +540,7 @@ class MAPPOTrainer:
 
             critic = self.critics[team]
             optimizer = self.critic_optimizers[team]
+            closs_acc, cn = 0.0, 0
 
             for _ in range(config["ppo_epochs"]):
                 indices = np.arange(len(all_team_obs))
@@ -549,6 +560,12 @@ class MAPPOTrainer:
                     critic_loss.backward()
                     nn.utils.clip_grad_norm_(critic.parameters(), config["max_grad_norm"])
                     optimizer.step()
+
+                    closs_acc += critic_loss.item()
+                    cn += 1
+
+            if cn > 0:
+                self.writer.add_scalar(f"loss/critic_{team}", closs_acc / cn, self.total_steps)
 
         # --- 버퍼 초기화 ---
         for buffer in self.buffers.values():
@@ -659,6 +676,7 @@ class MAPPOTrainer:
 
         # --- 학습 루프 ---
         steps_since_update = 0
+        episode_steps = 0          # [수정] 실제 에피소드 길이 (업데이트로 리셋되지 않음)
         episode_start_time = time.time()
         terminated_agents = set()
 
@@ -711,12 +729,28 @@ class MAPPOTrainer:
 
                     # TensorBoard 기록
                     self.writer.add_scalar("episode/total_reward", total_ep_reward, self.episode_count)
-                    self.writer.add_scalar("episode/length", steps_since_update, self.episode_count)
+                    # [수정] steps_since_update → episode_steps (업데이트마다 리셋되던 버그)
+                    self.writer.add_scalar("episode/length", episode_steps, self.episode_count)
+                    self.writer.add_scalar("episode/seconds", elapsed, self.episode_count)
 
-                    # 역할별 보상 기록
+                    # [수정] 역할별 보상: 같은 태그에 덮어쓰지 않고 평균을 기록
+                    role_rewards = defaultdict(list)
                     for agent_id, reward in self.episode_rewards.items():
-                        role = self.agent_roles.get(agent_id, "unknown")
-                        self.writer.add_scalar(f"reward/{role}", reward, self.episode_count)
+                        role_rewards[self.agent_roles.get(agent_id, "unknown")].append(reward)
+
+                    for role, rewards in role_rewards.items():
+                        self.writer.add_scalar(
+                            f"reward/{role}", float(np.mean(rewards)), self.episode_count
+                        )
+
+                    # [추가] 승패 지표 — 사보타주 보상이 양수면 사보타주 승리로 간주
+                    if role_rewards.get("saboteur"):
+                        sab_won = 1.0 if float(np.mean(role_rewards["saboteur"])) > 0 else 0.0
+                        self.writer.add_scalar(
+                            "outcome/saboteur_win_rate", sab_won, self.episode_count
+                        )
+
+                    self.writer.flush()
 
                     # 저장
                     if self.episode_count % config["save_interval"] == 0:
@@ -728,6 +762,7 @@ class MAPPOTrainer:
                     terminated_agents.clear()
                     episode_start_time = time.time()
                     steps_since_update = 0
+                    episode_steps = 0
 
                     # 환경 리셋
                     env.reset()
@@ -772,17 +807,22 @@ class MAPPOTrainer:
                     # 행동 저장
                     actions_dict[agent_id] = action
 
-                    # 보상 (이전 스텝의)
+                    # [수정] ML-Agents의 reward는 "직전 행동의 결과"이므로
+                    # 현재 스텝이 아니라 이전 버퍼 칸에 귀속시켜야 함
                     reward = decision_steps[agent_id].reward
                     self.episode_rewards[agent_id] += reward
 
-                    # 버퍼에 추가
-                    self.buffers[agent_id].add(
+                    buf = self.buffers[agent_id]
+                    if len(buf) > 0:
+                        buf.rewards[-1] += reward
+
+                    # 버퍼에 추가 (보상은 다음 스텝에서 채워짐)
+                    buf.add(
                         obs=obs,
                         team_obs=team_obs,
                         action=action,
                         log_prob=log_prob,
-                        reward=reward,
+                        reward=0.0,
                         done=0.0,
                         value=value,
                     )
@@ -803,6 +843,7 @@ class MAPPOTrainer:
 
                 self.total_steps += len(decision_steps)
                 steps_since_update += len(decision_steps)
+                episode_steps += len(decision_steps)
 
                 # ---- 업데이트 체크 ----
                 # 살아있는 에이전트 기준으로만 판단 (사망 에이전트의 짧은 버퍼가 블로킹하지 않도록)

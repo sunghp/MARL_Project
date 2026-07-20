@@ -136,7 +136,11 @@ public class NPCController : MonoBehaviour
     public void MoveToRoom(InteractionPoint room)
     {
         if (room == null || agent == null) return;
-        
+
+        // 진행 중인 상호작용이 있으면 제대로 취소 (방 점유 해제)
+        if (isInteracting)
+            CancelCurrentInteraction();
+
         currentInteractionPoint = room;
         agent.isStopped = false;
         agent.SetDestination(room.transform.position);
@@ -146,9 +150,13 @@ public class NPCController : MonoBehaviour
     public bool IsNearInteractionPoint()
     {
         if (currentInteractionPoint == null) return false;
-        
-        float distance = Vector3.Distance(transform.position, currentInteractionPoint.transform.position);
-        return distance <= interactionRange;
+
+        Vector3 a = transform.position;
+        Vector3 b = currentInteractionPoint.transform.position;
+        a.y = 0f;
+        b.y = 0f;
+
+        return Vector3.Distance(a, b) <= interactionRange;
     }
 
     public void TryStartSabotage()
@@ -163,9 +171,13 @@ public class NPCController : MonoBehaviour
 
     public void TryStartRepair()
     {
-        if (currentInteractionPoint != null && IsNearInteractionPoint())
+        bool near = IsNearInteractionPoint();
+        if (currentInteractionPoint != null && near)
         {
-            if (!currentInteractionPoint.TryStartInteraction(gameObject)) return;
+            if (!currentInteractionPoint.TryStartInteraction(gameObject))
+            {
+                return;
+            }
             isSabotaging = false;
             StartInteraction();
         }

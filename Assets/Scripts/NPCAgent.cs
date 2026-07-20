@@ -173,20 +173,26 @@ public class NPCAgent : Agent
 
     public override void OnActionReceived(ActionBuffers actions)
     {
+
+        if (gameManager == null) gameManager = GameManager.Instance;
+        if (npcController == null) npcController = GetComponent<NPCController>();
+
         if (npcController == null || gameManager == null || gameManager.IsGameOver()) return;
 
         int roomChoice = actions.DiscreteActions[0];        // 0~7: 방 선택, 8: 대기
         int interactionChoice = actions.DiscreteActions[1]; // 0: 없음, 1: 부수기, 2: 고치기, 3: 사격
 
         // ===== 이동 처리 =====
-        if (roomChoice < allRooms.Length && allRooms[roomChoice] != null)
+        // 상호작용 진행 중이면 이동 명령 무시 (중단 방지)
+        if (!npcController.IsInteracting() &&
+            roomChoice < allRooms.Length && allRooms[roomChoice] != null)
         {
             npcController.MoveToRoom(allRooms[roomChoice]);
         }
         // roomChoice == 8: 현재 위치 유지
 
         // ===== 상호작용 처리 =====
-        if (interactionChoice > 0 && npcController != null && npcController.IsNearInteractionPoint())
+        if (interactionChoice > 0 && !npcController.IsInteracting() && npcController.IsNearInteractionPoint())
         {
             switch (interactionChoice)
             {
@@ -297,7 +303,6 @@ public class NPCAgent : Agent
         discreteActions[0] = 8; // 기본: 대기
         discreteActions[1] = 0; // 기본: 없음
 
-        // 숫자키 1~8로 방 선택
         for (int i = 0; i < 8; i++)
         {
             if (Input.GetKey(KeyCode.Alpha1 + i))
@@ -307,8 +312,8 @@ public class NPCAgent : Agent
             }
         }
 
-        if (Input.GetKey(KeyCode.E)) discreteActions[1] = 2; // 고치기
-        if (Input.GetKey(KeyCode.Q)) discreteActions[1] = 1; // 부수기
-        if (Input.GetKey(KeyCode.F)) discreteActions[1] = 3; // 사격
+        if (Input.GetKey(KeyCode.E)) discreteActions[1] = 2;
+        if (Input.GetKey(KeyCode.Q)) discreteActions[1] = 1;
+        if (Input.GetKey(KeyCode.F)) discreteActions[1] = 3;
     }
 }

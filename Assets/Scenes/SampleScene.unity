@@ -617,6 +617,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3599654858828044030, guid: efb95083860f99941a9453ffe9409b39, type: 3}
+      propertyPath: roomName
+      value: EngineRoom
+      objectReference: {fileID: 0}
+    - target: {fileID: 3599654858828044030, guid: efb95083860f99941a9453ffe9409b39, type: 3}
+      propertyPath: roomIndex
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 3957802064749522020, guid: efb95083860f99941a9453ffe9409b39, type: 3}
       propertyPath: m_Name
       value: EngineRoom_IO
@@ -721,6 +729,14 @@ PrefabInstance:
     - target: {fileID: 3275971868712477115, guid: efb95083860f99941a9453ffe9409b39, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3599654858828044030, guid: efb95083860f99941a9453ffe9409b39, type: 3}
+      propertyPath: roomName
+      value: OxygenRoom
+      objectReference: {fileID: 0}
+    - target: {fileID: 3599654858828044030, guid: efb95083860f99941a9453ffe9409b39, type: 3}
+      propertyPath: roomIndex
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 3957802064749522020, guid: efb95083860f99941a9453ffe9409b39, type: 3}
       propertyPath: m_Name
@@ -874,6 +890,10 @@ PrefabInstance:
     - target: {fileID: 3275971868712477115, guid: efb95083860f99941a9453ffe9409b39, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3599654858828044030, guid: efb95083860f99941a9453ffe9409b39, type: 3}
+      propertyPath: roomIndex
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 3957802064749522020, guid: efb95083860f99941a9453ffe9409b39, type: 3}
       propertyPath: m_Name
@@ -1199,7 +1219,7 @@ GameObject:
   m_Component:
   - component: {fileID: 395964145}
   m_Layer: 0
-  m_Name: PatrolPoint 3
+  m_Name: PatrolPoint 2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1292,6 +1312,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3599654858828044030, guid: efb95083860f99941a9453ffe9409b39, type: 3}
+      propertyPath: roomName
+      value: ElectronicRoom
+      objectReference: {fileID: 0}
+    - target: {fileID: 3599654858828044030, guid: efb95083860f99941a9453ffe9409b39, type: 3}
+      propertyPath: roomIndex
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3957802064749522020, guid: efb95083860f99941a9453ffe9409b39, type: 3}
       propertyPath: m_Name
       value: ElectronicRoom_IO
@@ -1348,6 +1376,14 @@ PrefabInstance:
     - target: {fileID: 3275971868712477115, guid: efb95083860f99941a9453ffe9409b39, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3599654858828044030, guid: efb95083860f99941a9453ffe9409b39, type: 3}
+      propertyPath: roomName
+      value: NeclearReactor
+      objectReference: {fileID: 0}
+    - target: {fileID: 3599654858828044030, guid: efb95083860f99941a9453ffe9409b39, type: 3}
+      propertyPath: roomIndex
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 3957802064749522020, guid: efb95083860f99941a9453ffe9409b39, type: 3}
       propertyPath: m_Name
@@ -2499,7 +2535,7 @@ GameObject:
   m_Component:
   - component: {fileID: 901351094}
   m_Layer: 0
-  m_Name: PatrolPoint 5
+  m_Name: PatrolPoint 4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2818,7 +2854,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1123815196}
   m_Layer: 0
-  m_Name: PatrolPoint 7
+  m_Name: PatrolPoint 6
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3002,7 +3038,7 @@ MonoBehaviour:
   saboteurs: []
   humans: []
   maxEpisodeTime: 300
-  cafeSpawnPoint: {fileID: 0}
+  cafeSpawnPoint: {fileID: 1581498305}
 --- !u!4 &1214160767
 Transform:
   m_ObjectHideFlags: 0
@@ -3070,9 +3106,13 @@ PrefabInstance:
       propertyPath: m_Name
       value: NPC 4
       objectReference: {fileID: 0}
+    - target: {fileID: 5303514530585715340, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
+      propertyPath: interactionRange
+      value: 3.5
+      objectReference: {fileID: 0}
     - target: {fileID: 9069652367387896264, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
       propertyPath: m_BehaviorType
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 4720536023078726807, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
@@ -3166,9 +3206,13 @@ PrefabInstance:
       propertyPath: m_Name
       value: NPC 3
       objectReference: {fileID: 0}
+    - target: {fileID: 5303514530585715340, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
+      propertyPath: interactionRange
+      value: 3.5
+      objectReference: {fileID: 0}
     - target: {fileID: 9069652367387896264, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
       propertyPath: m_BehaviorType
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 4720536023078726807, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
@@ -3287,7 +3331,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1296359775}
   m_Layer: 0
-  m_Name: PatrolPoint 2
+  m_Name: PatrolPoint 8
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3553,6 +3597,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3599654858828044030, guid: efb95083860f99941a9453ffe9409b39, type: 3}
+      propertyPath: roomName
+      value: ProtectorRoom
+      objectReference: {fileID: 0}
+    - target: {fileID: 3599654858828044030, guid: efb95083860f99941a9453ffe9409b39, type: 3}
+      propertyPath: roomIndex
+      value: 5
+      objectReference: {fileID: 0}
     - target: {fileID: 3957802064749522020, guid: efb95083860f99941a9453ffe9409b39, type: 3}
       propertyPath: m_Name
       value: ProtectorRoom_IO
@@ -3609,6 +3661,14 @@ PrefabInstance:
     - target: {fileID: 3275971868712477115, guid: efb95083860f99941a9453ffe9409b39, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3599654858828044030, guid: efb95083860f99941a9453ffe9409b39, type: 3}
+      propertyPath: roomName
+      value: Storage
+      objectReference: {fileID: 0}
+    - target: {fileID: 3599654858828044030, guid: efb95083860f99941a9453ffe9409b39, type: 3}
+      propertyPath: roomIndex
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 3957802064749522020, guid: efb95083860f99941a9453ffe9409b39, type: 3}
       propertyPath: m_Name
@@ -3772,9 +3832,13 @@ PrefabInstance:
       propertyPath: m_Name
       value: NPC 5
       objectReference: {fileID: 0}
+    - target: {fileID: 5303514530585715340, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
+      propertyPath: interactionRange
+      value: 3.5
+      objectReference: {fileID: 0}
     - target: {fileID: 9069652367387896264, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
       propertyPath: m_BehaviorType
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 4720536023078726807, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
@@ -3863,9 +3927,17 @@ PrefabInstance:
       propertyPath: m_Name
       value: NPC 6
       objectReference: {fileID: 0}
+    - target: {fileID: 2772531330439405067, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5303514530585715340, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
+      propertyPath: interactionRange
+      value: 3.5
+      objectReference: {fileID: 0}
     - target: {fileID: 9069652367387896264, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
       propertyPath: m_BehaviorType
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 4720536023078726807, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
@@ -4000,9 +4072,13 @@ PrefabInstance:
       propertyPath: m_Name
       value: NPC 2
       objectReference: {fileID: 0}
+    - target: {fileID: 5303514530585715340, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
+      propertyPath: interactionRange
+      value: 3.5
+      objectReference: {fileID: 0}
     - target: {fileID: 9069652367387896264, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
       propertyPath: m_BehaviorType
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 4720536023078726807, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
@@ -4073,7 +4149,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1678897901}
   m_Layer: 0
-  m_Name: PatrolPoint 4
+  m_Name: PatrolPoint 3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4904,7 +4980,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2047895757}
   m_Layer: 0
-  m_Name: PatrolPoint 8
+  m_Name: PatrolPoint 7
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4983,7 +5059,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2080480625}
   m_Layer: 0
-  m_Name: PatrolPoint 6
+  m_Name: PatrolPoint 5
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5162,6 +5238,10 @@ PrefabInstance:
       value: NPC 1
       objectReference: {fileID: 0}
     - target: {fileID: 5303514530585715340, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
+      propertyPath: interactionRange
+      value: 3.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5303514530585715340, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
       propertyPath: patrolPoints.Array.size
       value: 0
       objectReference: {fileID: 0}
@@ -5171,7 +5251,7 @@ PrefabInstance:
       objectReference: {fileID: 901351094}
     - target: {fileID: 9069652367387896264, guid: 3c1667a3785261642a743762dfd8a780, type: 3}
       propertyPath: m_BehaviorType
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -5191,8 +5271,12 @@ PrefabInstance:
       value: Player
       objectReference: {fileID: 0}
     - target: {fileID: 12514331779993709, guid: e047aec929e73e94f9b0a4ed9becfbd7, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 12514331779993709, guid: e047aec929e73e94f9b0a4ed9becfbd7, type: 3}
       propertyPath: m_TagString
-      value: Untagged
+      value: Player
       objectReference: {fileID: 0}
     - target: {fileID: 219851612946302360, guid: e047aec929e73e94f9b0a4ed9becfbd7, type: 3}
       propertyPath: m_LocalPosition.x
