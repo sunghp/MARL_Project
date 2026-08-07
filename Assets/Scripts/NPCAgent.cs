@@ -91,6 +91,8 @@ public class NPCAgent : Agent
     // 총합:           42
     //
     // ===================================================================
+    private const int LOCAL_OBS_DIM = 55;
+    private const int GLOBAL_OBS_DIM = 42;
 
     public override void CollectObservations(VectorSensor sensor)
     {
@@ -99,31 +101,110 @@ public class NPCAgent : Agent
             isSaboteur = roleManager.IsSaboteur(gameObject);
             isCaptain  = roleManager.IsCaptain(gameObject);
         }
-        // ===== 1. 자기 정보 (5) =====
-        sensor.AddObservation(isSaboteur ? 1f : 0f);           // 1
-        sensor.AddObservation(isCaptain ? 1f : 0f);            // 1
-        sensor.AddObservation(transform.position / mapSize);    // 3 (x, y, z)
 
-        // ===== 2. 게임 상태 (3) =====
-        float avgHealth = 0f;
-        if (SystemHealth.Instance != null)
-            avgHealth = SystemHealth.Instance.GetAverageHealth();
+        float visionRange     = gameManager != null ? gameManager.visionRange : 10f;
+        float alertThreshold  = gameManager != null ? gameManager.locationAlertThreshold : 30f;
 
-        sensor.AddObservation(avgHealth / 100f);                                // 1
-        sensor.AddObservation(gameManager != null ?
-            gameManager.GetDistanceProgress() : 0f);                            // 1
-        sensor.AddObservation(gameManager != null ?
-            gameManager.GetAliveHumanRatio() : 0f);                             // 1
+        float avgHealth    = SystemHealth.Instance != null ? SystemHealth.Instance.GetAverageHealth() : 0f;
+        float distProgress = gameManager != null ? gameManager.GetDistanceProgress() : 0f;
+        float aliveRatio   = gameManager != null ? gameManager.GetAliveHumanRatio() : 0f;
 
-        // ===== 3. 각 방 상태 (MAX_ROOMS * 3 = 24) =====
+        // ===================== LOCAL (Actor, 55) =====================
+        // 자기 정보 (5)
+        sensor.AddObservation(isSaboteur ? 1f : 0f);
+        sensor.AddObservation(isCaptain ? 1f : 0f);
+        sensor.AddObservation(transform.position / mapSize);   // 3
+
+        // 공개 게임 상태 (3)
+        sensor.AddObservation(avgHealth / 100f);
+        sensor.AddObservation(distProgress);
+        sensor.AddObservation(aliveRatio);
+
+        // 방 8개 (8 × 4 = 32): 거리는 항상, 안정도/사용중은 (시야 OR 알림)일 때만
         for (int i = 0; i < MAX_ROOMS; i++)
         {
             if (i < allRooms.Length && allRooms[i] != null)
             {
-                float distance = Vector3.Distance(transform.position, allRooms[i].transform.position);
-                sensor.AddObservation(distance / mapSize);                      // 거리 정규화
-                sensor.AddObservation(allRooms[i].GetHealthPercent());          // 방 안정도 (0~1)
-                sensor.AddObservation(allRooms[i].IsBeingUsed() ? 1f : 0f);    // 사용 중 여부
+                float dist = Vector3.Distance(transform.position, allRooms[i].transform.position);
+                sensor.AddObservation(dist / mapSize);   // 거리 (공개)
+
+                bool alerted = allRooms[i].GetCurrentHealth() <= alertThreshold;
+                bool visible = (dist <= visionRange) || alerted;
+                
+                if (visible)
+                {
+                    sensor.AddObservation(allRooms[i].GetHealthPercent());        // 안정도
+                    sensor.AddObservation(allRooms[i].IsBeingUsed() ? 1f : 0f);   // 사용중
+                    sensor.AddObservation(1f);                                    // visFlag
+                }
+                else
+                {
+                    sensor.AddObservation(0f);   // 안정도 (가림)
+                    sensor.AddObservation(0f);   // 사용중 (가림)
+                    sensor.AddObservation(0f);   // visFlag = 안 보임
+                }
+            }
+            else
+            {
+                sensor.AddObservation(0f);
+                sensor.AddObservation(0f);
+                sensor.AddObservation(0f);
+                sensor.AddObservation(0f);
+            }
+        }
+
+        // 캐릭터 5명 (5 × 3 = 15): 시야 안일 때만 위치 공개
+        int cCount = 0;
+        if (gameManager != null && gameManager.allCharacters != null)
+        {
+            foreach (var ch in gameManager.allCharacters)
+            {
+                if (ch == gameObject) continue;
+                if (cCount >= MAX_OTHER_CHARACTERS) break;
+
+                if (ch != null && ch.activeInHierarchy &&
+                    Vector3.Distance(transform.position, ch.transform.position) <= visionRange)
+                {
+                    sensor.AddObservation(ch.transform.position.x / mapSize);
+                    sensor.AddObservation(ch.transform.position.z / mapSize);
+                    sensor.AddObservation(1f);   // visFlag
+                }
+                else
+                {
+                    sensor.AddObservation(0f);
+                    sensor.AddObservation(0f);
+                    sensor.AddObservation(0f);
+                }
+                cCount++;
+            }
+        }
+        for (int i = cCount; i < MAX_OTHER_CHARACTERS; i++)
+        {
+            sensor.AddObservation(0f);
+            sensor.AddObservation(0f);
+            sensor.AddObservation(0f);
+        }
+
+        // ===================== GLOBAL (Critic, 42) =====================
+        // 자기 정보 (5)
+        sensor.AddObservation(isSaboteur ? 1f : 0f);
+        sensor.AddObservation(isCaptain ? 1f : 0f);
+        sensor.AddObservation(transform.position / mapSize);
+
+        // 게임 상태 (3)
+        sensor.AddObservation(avgHealth / 100f);
+        sensor.AddObservation(distProgress);
+        sensor.AddObservation(aliveRatio);
+
+        // 모든 방 (8 × 3 = 24): 가림 없음
+        for (int i = 0; i < MAX_ROOMS; i++)
+        {
+            if (i < allRooms.Length && allRooms[i] != null)
+            {
+                float dist = Vector3.Distance(transform.position, allRooms[i].transform.position);
+                sensor.AddObservation(dist / mapSize);
+                sensor.AddObservation(allRooms[i].GetHealthPercent());
+                sensor.AddObservation(allRooms[i].IsBeingUsed() ? 1f : 0f);
             }
             else
             {
@@ -133,38 +214,33 @@ public class NPCAgent : Agent
             }
         }
 
-        // ===== 4. 다른 캐릭터 정보 (MAX_OTHER_CHARACTERS * 2 = 10) =====
-        int characterCount = 0;
-
+        // 모든 캐릭터 (5 × 2 = 10): 가림 없음
+        int gCount = 0;
         if (gameManager != null && gameManager.allCharacters != null)
         {
-            foreach (var character in gameManager.allCharacters)
+            foreach (var ch in gameManager.allCharacters)
             {
-                if (character == gameObject) continue;
-                if (characterCount >= MAX_OTHER_CHARACTERS) break;
-
-                if (character != null && character.activeInHierarchy)
+                if (ch == gameObject) continue;
+                if (gCount >= MAX_OTHER_CHARACTERS) break;
+                if (ch != null && ch.activeInHierarchy)
                 {
-                    sensor.AddObservation(character.transform.position.x / mapSize);
-                    sensor.AddObservation(character.transform.position.z / mapSize);
+                    sensor.AddObservation(ch.transform.position.x / mapSize);
+                    sensor.AddObservation(ch.transform.position.z / mapSize);
                 }
                 else
                 {
                     sensor.AddObservation(0f);
                     sensor.AddObservation(0f);
                 }
-                characterCount++;
+                gCount++;
             }
         }
-
-        // 남은 슬롯 패딩
-        for (int i = characterCount; i < MAX_OTHER_CHARACTERS; i++)
+        for (int i = gCount; i < MAX_OTHER_CHARACTERS; i++)
         {
             sensor.AddObservation(0f);
             sensor.AddObservation(0f);
         }
-
-        // 총 Observation 수: 5 + 3 + 24 + 10 = 42
+        // 합계: 55 + 42 = 97
     }
 
     // ===================================================================

@@ -42,7 +42,8 @@ CONFIG = {
     "time_scale": 20.0,           # 게임 속도 배율 (높을수록 빠름)
 
     # === 관측/행동 공간 ===
-    "obs_dim": 42,                # CollectObservations에서 정의한 크기
+    "local_obs_dim": 55,     # Actor 입력 (부분 관측)
+    "global_obs_dim": 42,    # Critic 입력 (전역, per-agent)
     "action_branches": [9, 4],    # [방 선택(0-8), 상호작용(0-3)]
 
     # === 팀 구성 ===
@@ -291,15 +292,15 @@ class MAPPOTrainer:
         # --- 역할별 Actor ---
         self.actors = {
             "human": Actor(
-                config["obs_dim"], config["action_branches"],
+                config["local_obs_dim"], config["action_branches"],
                 config["hidden_dim"], config["num_layers"]
             ).to(self.device),
             "saboteur": Actor(
-                config["obs_dim"], config["action_branches"],
+                config["local_obs_dim"], config["action_branches"],
                 config["hidden_dim"], config["num_layers"]
             ).to(self.device),
             "captain": Actor(
-                config["obs_dim"], config["action_branches"],
+                config["local_obs_dim"], config["action_branches"],
                 config["hidden_dim"], config["num_layers"]
             ).to(self.device),
         }
@@ -307,11 +308,11 @@ class MAPPOTrainer:
         # --- 팀별 Centralized Critic ---
         self.critics = {
             "human_team": CentralizedCritic(
-                config["obs_dim"], config["max_human_team"],
+                config["global_obs_dim"], config["max_human_team"],
                 config["hidden_dim"], config["num_layers"]
             ).to(self.device),
             "saboteur_team": CentralizedCritic(
-                config["obs_dim"], config["max_saboteur_team"],
+                config["global_obs_dim"], config["max_saboteur_team"],
                 config["hidden_dim"], config["num_layers"]
             ).to(self.device),
         }
@@ -377,7 +378,7 @@ class MAPPOTrainer:
         all_agent_obs: {agent_id: obs_numpy} (현재 살아있는 에이전트)
         team: 'human_team' 또는 'saboteur_team'
         """
-        obs_dim = self.config["obs_dim"]
+        obs_dim = self.config["global_obs_dim"]
 
         if team == "human_team":
             max_size = self.config["max_human_team"]
@@ -775,34 +776,35 @@ class MAPPOTrainer:
                     env.step()
                     continue
 
-                # 현재 살아있는 에이전트들의 관측 수집
-                all_agent_obs = {}
+                L = config["local_obs_dim"]
+                all_agent_local = {}
+                all_agent_global = {}
                 for agent_id in decision_steps.agent_id:
                     agent_id = int(agent_id)
-                    obs = decision_steps[agent_id].obs[0]  # 첫 번째 관측
-                    all_agent_obs[agent_id] = obs
+                    full = decision_steps[agent_id].obs[0]  # 97차원
+                    all_agent_local[agent_id] = full[:L]  # 앞 55 = Actor용
+                    all_agent_global[agent_id] = full[L:]  # 뒤 42 = Critic용
 
-                    # 역할 판별 (첫 스텝에서)
                     if agent_id not in self.agent_roles:
-                        role = self.identify_role(obs)
+                        role = self.identify_role(full)  # 앞부분이 self라 그대로 OK
                         self.agent_roles[agent_id] = role
                         self.agent_teams[agent_id] = self.get_team(role)
 
-                # 팀 관측 구성 (centralized critic용)
+                # team_obs는 전역 슬라이스로 구성
                 team_obs_cache = {
-                    "human_team": self.build_team_obs("human_team", all_agent_obs),
-                    "saboteur_team": self.build_team_obs("saboteur_team", all_agent_obs),
+                    "human_team": self.build_team_obs("human_team", all_agent_global),
+                    "saboteur_team": self.build_team_obs("saboteur_team", all_agent_global),
                 }
 
                 # 각 에이전트별 행동 선택
                 actions_dict = {}
                 for agent_id in decision_steps.agent_id:
                     agent_id = int(agent_id)
-                    obs = all_agent_obs[agent_id]
+                    local_obs = all_agent_local[agent_id]
                     team = self.agent_teams[agent_id]
                     team_obs = team_obs_cache[team]
 
-                    action, log_prob, value = self.select_action(agent_id, obs, team_obs)
+                    action, log_prob, value = self.select_action(agent_id, local_obs, team_obs)
 
                     # 행동 저장
                     actions_dict[agent_id] = action
@@ -818,7 +820,7 @@ class MAPPOTrainer:
 
                     # 버퍼에 추가 (보상은 다음 스텝에서 채워짐)
                     buf.add(
-                        obs=obs,
+                        obs=local_obs,
                         team_obs=team_obs,
                         action=action,
                         log_prob=log_prob,
