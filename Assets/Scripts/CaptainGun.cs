@@ -233,6 +233,9 @@ public class CaptainGun : MonoBehaviour
         // 역할 확인 (정체는 공개하지 않음!)
         bool wasSaboteur = RoleManager.Instance.IsSaboteur(target);
 
+        // 행동 지표: 사격 기록
+        if (GameManager.Instance != null) GameManager.Instance.RecordShot(wasSaboteur);
+
         Debug.Log($"🔫 [처형] {target.name}이(가) 처형되었습니다.");
         Debug.Log($"[함장] 남은 총알: {remainingBullets}발");
 
@@ -335,6 +338,9 @@ public class CaptainGun : MonoBehaviour
 
         bool wasSaboteur = RoleManager.Instance != null && RoleManager.Instance.IsSaboteur(target);
 
+        // 행동 지표: 사격 기록
+        if (GameManager.Instance != null) GameManager.Instance.RecordShot(wasSaboteur);
+
         NPCController npc = target.GetComponent<NPCController>();
         if (npc != null) npc.Die();
 
@@ -351,4 +357,3 @@ public class CaptainGun : MonoBehaviour
         isMeetingActive = false;
     }
 }
-

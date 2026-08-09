@@ -105,6 +105,12 @@ public class GameManager : MonoBehaviour
     public float maxEpisodeTime = 300f;
     private float episodeTimer = 0f;
 
+    // ===== 행동 지표 (에피소드 단위 카운터) =====
+    private int shotsFired = 0;
+    private int shotsHitSaboteur = 0;
+    private int sabotageTotal = 0;
+    private int sabotageHidden = 0;
+
     // ===== ML-Agents 헬퍼 =====
 
     public bool IsGameOver()
@@ -143,6 +149,15 @@ public class GameManager : MonoBehaviour
     // 게임 종료 시 모든 에이전트에게 알림 + 동기화 리셋
     public void NotifyGameEnd(bool humanWin)
     {
+        // 0. 행동 지표 보고 (ResetGame이 카운터를 0으로 만들기 전에)
+        var recorder = Academy.Instance.StatsRecorder;
+        if (shotsFired > 0)
+            recorder.Add("behavior/captain_shot_accuracy",
+                         (float)shotsHitSaboteur / shotsFired);
+        if (sabotageTotal > 0)
+            recorder.Add("behavior/sabotage_hidden_rate",
+                         (float)sabotageHidden / sabotageTotal);
+
         // 1. 죽은 에이전트 재활성화 (EndEpisode를 받을 수 있도록)
         foreach (var agent in allNPCAgents)
         {
@@ -341,6 +356,33 @@ public class GameManager : MonoBehaviour
 #endif
     }
 
+    // ===== 행동 지표 기록 =====
+
+    // 함장이 한 발 쏠 때마다 (CaptainGun에서 호출)
+    public void RecordShot(bool wasSaboteur)
+    {
+        shotsFired++;
+        if (wasSaboteur) shotsHitSaboteur++;
+    }
+
+    // 부수기 완료될 때마다 (InteractionPoint에서 호출)
+    // 목격자 = 부수기 완료 순간 visionRange 안에 있는 살아있는 인간팀 (동료 사보타주 제외)
+    public void RecordSabotage(GameObject saboteur)
+    {
+        if (saboteur == null) return;
+        sabotageTotal++;
+
+        int witnesses = 0;
+        foreach (var ch in allCharacters)
+        {
+            if (ch == null || ch == saboteur || !ch.activeInHierarchy) continue;
+            if (RoleManager.Instance != null && RoleManager.Instance.IsSaboteur(ch)) continue; // 동료 사보타주 제외
+            if (Vector3.Distance(saboteur.transform.position, ch.transform.position) <= visionRange)
+                witnesses++;
+        }
+        if (witnesses == 0) sabotageHidden++;
+    }
+
     // ===== Getter 메서드 =====
     public float GetCurrentDistance() => currentDistance;
     public float GetProgress() => currentDistance / totalDistance;
@@ -374,6 +416,12 @@ public class GameManager : MonoBehaviour
         currentDistance = 0f;
         shipStopped = false;
         episodeTimer = 0f;
+
+        // 행동 지표 카운터 리셋
+        shotsFired = 0;
+        shotsHitSaboteur = 0;
+        sabotageTotal = 0;
+        sabotageHidden = 0;
 
         // 원본에서 allCharacters 복원 (RemoveCharacter로 빠진 캐릭터 복구)
         allCharacters = new List<GameObject>(allCharactersOriginal);

@@ -64,6 +64,9 @@ public class InteractionPoint : MonoBehaviour
             // 사보타주 감지 이벤트 발생 (함장 AI가 구독)
             OnSabotageDetected?.Invoke(user, roomName, transform.position);
 
+            // 행동 지표: 부수기 은닉 성공 여부 기록
+            if (GameManager.Instance != null) GameManager.Instance.RecordSabotage(user);
+
             // 30% 이하 알림
             if (currentHealth <= 30f && !hasAlerted)
             {

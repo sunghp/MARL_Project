@@ -27,6 +27,7 @@ from torch.utils.tensorboard import SummaryWriter
 from mlagents_envs.environment import UnityEnvironment
 from mlagents_envs.side_channel.engine_configuration_channel import EngineConfigurationChannel
 from mlagents_envs.side_channel.environment_parameters_channel import EnvironmentParametersChannel
+from mlagents_envs.side_channel.stats_side_channel import StatsSideChannel
 from mlagents_envs.base_env import ActionTuple
 
 
@@ -36,7 +37,7 @@ from mlagents_envs.base_env import ActionTuple
 
 CONFIG = {
     # === 환경 ===
-    "env_path": "Builds/Linux/The_thing.x86_64",
+    "env_path": "Builds/Windows/My project.exe",
     "balance_yaml": "config/TheThing.yaml",   # 게임 밸런스 파라미터 yaml (environment_parameters 블록을 읽어 Unity에 주입)
     "no_graphics": True,          # 헤드리스 모드 (화면 없이)
     "time_scale": 20.0,           # 게임 속도 배율 (높을수록 빠름)
@@ -635,6 +636,7 @@ class MAPPOTrainer:
 
         channel = EngineConfigurationChannel()
         param_channel = EnvironmentParametersChannel()
+        stats_channel = StatsSideChannel()   # Unity 행동 지표 수신용
 
         # --- 게임 밸런스 파라미터 로드 (yaml의 environment_parameters 블록) ---
         env_params = {}
@@ -649,8 +651,9 @@ class MAPPOTrainer:
 
         env = UnityEnvironment(
             file_name=config["env_path"],
-            side_channels=[channel, param_channel],
-            no_graphics=config["no_graphics"],
+            side_channels=[channel, param_channel, stats_channel],
+            base_port=5004,
+            timeout_wait=120,
         )
         channel.set_configuration_parameters(time_scale=config["time_scale"])
 
@@ -750,6 +753,16 @@ class MAPPOTrainer:
                         self.writer.add_scalar(
                             "outcome/saboteur_win_rate", sab_won, self.episode_count
                         )
+
+                    # [추가] Unity 행동 지표 (StatsSideChannel) 기록
+                    #   behavior/captain_shot_accuracy, behavior/sabotage_hidden_rate
+                    env_stats = stats_channel.get_and_reset_stats()
+                    for stat_name, entries in env_stats.items():
+                        vals = [e[0] for e in entries]
+                        if vals:
+                            self.writer.add_scalar(
+                                stat_name, float(np.mean(vals)), self.episode_count
+                            )
 
                     self.writer.flush()
 
