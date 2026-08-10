@@ -78,8 +78,8 @@ CONFIG = {
     "log_interval": 10,           # N 에피소드마다 로그
 
     # === 고정상대 평가 ===
-    "eval_interval": 100_000,     # N 스텝마다 평가 (10만)
-    "eval_episodes": 30,          # 각 매치업(사보타주/인간)당 평가 에피소드 수
+    "eval_interval": 20000,     # N 스텝마다 평가 (10만)
+    "eval_episodes": 5,          # 각 매치업(사보타주/인간)당 평가 에피소드 수
 }
 
 

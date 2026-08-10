@@ -166,6 +166,14 @@ public class GameManager : MonoBehaviour
             recorder.Add("behavior/sabotage_hidden_rate",
                          (float)sabotageHidden / sabotageTotal);
 
+        // 0-1. 평가 모드: 실제 승패 보고 (평균 집계 = 승률)
+        //   frozenTeam==2 (인간 규칙봇, 학습된 사보타주 측정) → 사보타주 승리율
+        //   frozenTeam==1 (사보타주 규칙봇, 학습된 인간 측정)   → 인간 승리율
+        if (evalMode && frozenTeam == 2)
+            recorder.Add("eval/saboteur_vs_bot_win", humanWin ? 0f : 1f);
+        else if (evalMode && frozenTeam == 1)
+            recorder.Add("eval/human_vs_bot_win", humanWin ? 1f : 0f);
+
         // 1. 죽은 에이전트 재활성화 (EndEpisode를 받을 수 있도록)
         foreach (var agent in allNPCAgents)
         {
