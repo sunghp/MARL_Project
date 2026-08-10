@@ -218,6 +218,28 @@ public class NPCController : MonoBehaviour
         idleTimer = Random.Range(minIdleTime, maxIdleTime);
     }
 
+    // ===== 제어 모드 토글 (평가 모드용) =====
+    // useML=true  → ML-Agents 학습 정책이 제어 (OnActionReceived 실행)
+    // useML=false → 규칙봇(NPCAIBrain + 상태머신)이 제어
+    public bool IsUsingML() => useMLAgents;
+
+    public void SetControlMode(bool useML)
+    {
+        useMLAgents = useML;
+        useScoreBasedAI = !useML;
+
+        if (!useML)
+        {
+            // 규칙봇 모드: 브레인 확보 + 즉시 의사결정하도록 Idle 초기화
+            if (aiBrain == null) aiBrain = GetComponent<NPCAIBrain>();
+            if (aiBrain == null) aiBrain = gameObject.AddComponent<NPCAIBrain>();
+        }
+
+        // 상태 초기화 (Start()보다 먼저 불려도 안전하게 null 가드)
+        currentState = NPCState.Idle;
+        idleTimer = 0f;
+    }
+
     void Update()
     {
         if (isDead) return;
@@ -525,6 +547,9 @@ public class NPCController : MonoBehaviour
         // 상호작용 시작 시도
         if (currentInteractionPoint.TryStartInteraction(gameObject))
         {
+            // 규칙봇 자동 경로: 역할 기반으로 부수기/고치기 결정
+            // (사보타주는 위험 시 순찰하므로, 이 경로엔 부수기 타겟에 도착했을 때만 옴)
+            isSabotaging = RoleManager.Instance != null && RoleManager.Instance.IsSaboteur(gameObject);
             StartInteraction();
         }
         else

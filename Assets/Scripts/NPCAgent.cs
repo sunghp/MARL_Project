@@ -255,6 +255,9 @@ public class NPCAgent : Agent
 
         if (npcController == null || gameManager == null || gameManager.IsGameOver()) return;
 
+        // 평가 모드에서 규칙봇으로 고정된 캐릭터는 ML 행동을 무시 (NPCAIBrain이 제어)
+        if (!npcController.IsUsingML()) return;
+
         int roomChoice = actions.DiscreteActions[0];        // 0~7: 방 선택, 8: 대기
         int interactionChoice = actions.DiscreteActions[1]; // 0: 없음, 1: 부수기, 2: 고치기, 3: 사격
 

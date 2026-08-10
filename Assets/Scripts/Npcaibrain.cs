@@ -102,8 +102,16 @@ public class NPCAIBrain : MonoBehaviour
 
     void Update()
     {
-        // ML-Agents 모드: 에이전트가 직접 제어하므로 AI 브레인 비활성화
-        if (GetComponent<NPCAgent>() != null) return;
+        // ML-Agents가 이 캐릭터를 제어 중이면 브레인 정지.
+        // 평가 모드에서 규칙봇으로 고정된 캐릭터(useMLAgents=false)는 아래로 진행하여 브레인이 제어.
+        if (npcController != null)
+        {
+            if (npcController.IsUsingML()) return;
+        }
+        else if (GetComponent<NPCAgent>() != null)
+        {
+            return;   // 초기화 전 안전장치 (기존 동작 유지)
+        }
 
         // 함장 CaptainGun 참조 갱신 (타이밍 문제 해결)
         if (captainGun == null && RoleManager.Instance != null && RoleManager.Instance.IsCaptain(gameObject))
@@ -186,11 +194,15 @@ public class NPCAIBrain : MonoBehaviour
     /// </summary>
     public Vector3? GetPatrolPosition()
     {
+        // 초기화 타이밍 안전장치 (첫 프레임 NRE 방지)
+        if (allRooms == null || GameManager.Instance == null || GameManager.Instance.allCharacters == null)
+            return null;
+
         Dictionary<InteractionPoint, float> roomScores = new Dictionary<InteractionPoint, float>();
         
         foreach (var room in allRooms)
         {
-            if (room.IsBeingUsed()) continue;
+            if (room == null || room.IsBeingUsed()) continue;
             
             float dispersionScore = CalculateDispersionScore(room.transform.position);
             
@@ -909,4 +921,3 @@ public class NPCAIBrain : MonoBehaviour
 #endif
     }
 }
-    

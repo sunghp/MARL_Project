@@ -76,6 +76,10 @@ CONFIG = {
     "log_dir": "runs/mappo",
     "save_interval": 50,          # N 에피소드마다 저장
     "log_interval": 10,           # N 에피소드마다 로그
+
+    # === 고정상대 평가 ===
+    "eval_interval": 100_000,     # N 스텝마다 평가 (10만)
+    "eval_episodes": 30,          # 각 매치업(사보타주/인간)당 평가 에피소드 수
 }
 
 
@@ -339,6 +343,12 @@ class MAPPOTrainer:
         self.episode_rewards = defaultdict(float)
         self.episode_count = 0
         self.total_steps = 0
+
+        # --- 고정상대 평가 상태 ---
+        self.in_eval = False        # 평가 중 여부
+        self.eval_frozen = 0        # 현재 고정 팀 (2=인간고정→사보타주측정, 1=사보타주고정→인간측정)
+        self.eval_ep_count = 0      # 현재 매치업에서 집계된 평가 에피소드 수
+        self.next_eval_step = self.config["eval_interval"]  # 다음 평가 트리거 스텝
 
         # --- TensorBoard ---
         self.writer = SummaryWriter(config["log_dir"])
@@ -687,12 +697,29 @@ class MAPPOTrainer:
         try:
             while self.total_steps < config["total_timesteps"]:
 
+                # ---- 평가 트리거: N 스텝마다 학습 멈추고 고정상대 평가 진입 ----
+                if not self.in_eval and self.total_steps >= self.next_eval_step:
+                    self.in_eval = True
+                    self.eval_frozen = 2          # 인간 고정 → 학습된 사보타주 측정부터
+                    self.eval_ep_count = 0
+                    param_channel.set_float_parameter("eval_mode", 1.0)
+                    param_channel.set_float_parameter("frozen_team", 2.0)
+                    print(f"[평가 시작] step={self.total_steps} | 사보타주 측정 (인간 규칙봇 고정)")
+
                 # 현재 스텝의 에이전트 상태 가져오기
                 decision_steps, terminal_steps = env.get_steps(behavior_name)
 
                 # ---- 종료된 에이전트 처리 ----
                 for agent_id in terminal_steps.agent_id:
                     agent_id = int(agent_id)
+
+                    # [unknown 수정] 아직 역할 미등록이면 terminal 관측으로 등록
+                    #   (decision_steps에 한 번도 안 잡히고 바로 죽는 에이전트 대비)
+                    if agent_id not in self.agent_roles:
+                        full_t = terminal_steps[agent_id].obs[0]
+                        role_t = self.identify_role(full_t)
+                        self.agent_roles[agent_id] = role_t
+                        self.agent_teams[agent_id] = self.get_team(role_t)
 
                     # 마지막 보상 기록
                     reward = terminal_steps[agent_id].reward
@@ -714,61 +741,86 @@ class MAPPOTrainer:
                 if all_known_done or (len(decision_steps) == 0 and len(terminal_steps) > 0):
                     self.episode_count += 1
 
-                    # 남은 버퍼로 마지막 업데이트
-                    has_data = any(len(buf) > 0 for buf in self.buffers.values())
-                    if has_data:
-                        self.update()
-
-                    # 통계 기록
-                    total_ep_reward = sum(self.episode_rewards.values())
                     elapsed = time.time() - episode_start_time
-
-                    if self.episode_count % config["log_interval"] == 0:
-                        print(
-                            f"[에피소드 {self.episode_count}] "
-                            f"총 보상: {total_ep_reward:.2f} | "
-                            f"스텝: {self.total_steps} | "
-                            f"시간: {elapsed:.1f}s"
-                        )
-
-                    # TensorBoard 기록
-                    self.writer.add_scalar("episode/total_reward", total_ep_reward, self.episode_count)
-                    # [수정] steps_since_update → episode_steps (업데이트마다 리셋되던 버그)
-                    self.writer.add_scalar("episode/length", episode_steps, self.episode_count)
-                    self.writer.add_scalar("episode/seconds", elapsed, self.episode_count)
-
-                    # [수정] 역할별 보상: 같은 태그에 덮어쓰지 않고 평균을 기록
-                    role_rewards = defaultdict(list)
-                    for agent_id, reward in self.episode_rewards.items():
-                        role_rewards[self.agent_roles.get(agent_id, "unknown")].append(reward)
-
-                    for role, rewards in role_rewards.items():
-                        self.writer.add_scalar(
-                            f"reward/{role}", float(np.mean(rewards)), self.episode_count
-                        )
-
-                    # [추가] 승패 지표 — 사보타주 보상이 양수면 사보타주 승리로 간주
-                    if role_rewards.get("saboteur"):
-                        sab_won = 1.0 if float(np.mean(role_rewards["saboteur"])) > 0 else 0.0
-                        self.writer.add_scalar(
-                            "outcome/saboteur_win_rate", sab_won, self.episode_count
-                        )
-
-                    # [추가] Unity 행동 지표 (StatsSideChannel) 기록
-                    #   behavior/captain_shot_accuracy, behavior/sabotage_hidden_rate
                     env_stats = stats_channel.get_and_reset_stats()
-                    for stat_name, entries in env_stats.items():
-                        vals = [e[0] for e in entries]
-                        if vals:
-                            self.writer.add_scalar(
-                                stat_name, float(np.mean(vals)), self.episode_count
+
+                    if not self.in_eval:
+                        # ===== 학습 에피소드: 업데이트 + 학습 곡선 기록 =====
+                        has_data = any(len(buf) > 0 for buf in self.buffers.values())
+                        if has_data:
+                            self.update()
+
+                        total_ep_reward = sum(self.episode_rewards.values())
+
+                        if self.episode_count % config["log_interval"] == 0:
+                            print(
+                                f"[에피소드 {self.episode_count}] "
+                                f"총 보상: {total_ep_reward:.2f} | "
+                                f"스텝: {self.total_steps} | "
+                                f"시간: {elapsed:.1f}s"
                             )
 
-                    self.writer.flush()
+                        self.writer.add_scalar("episode/total_reward", total_ep_reward, self.episode_count)
+                        self.writer.add_scalar("episode/length", episode_steps, self.episode_count)
+                        self.writer.add_scalar("episode/seconds", elapsed, self.episode_count)
 
-                    # 저장
-                    if self.episode_count % config["save_interval"] == 0:
-                        self.save()
+                        role_rewards = defaultdict(list)
+                        for agent_id, reward in self.episode_rewards.items():
+                            role_rewards[self.agent_roles.get(agent_id, "unknown")].append(reward)
+                        for role, rewards in role_rewards.items():
+                            self.writer.add_scalar(
+                                f"reward/{role}", float(np.mean(rewards)), self.episode_count
+                            )
+
+                        if role_rewards.get("saboteur"):
+                            sab_won = 1.0 if float(np.mean(role_rewards["saboteur"])) > 0 else 0.0
+                            self.writer.add_scalar(
+                                "outcome/saboteur_win_rate", sab_won, self.episode_count
+                            )
+
+                        # 행동 지표 + Unity stats (학습 중엔 eval/* 안 옴)
+                        for stat_name, entries in env_stats.items():
+                            vals = [e[0] for e in entries]
+                            if vals:
+                                self.writer.add_scalar(
+                                    stat_name, float(np.mean(vals)), self.episode_count
+                                )
+
+                        if self.episode_count % config["save_interval"] == 0:
+                            self.save()
+                    else:
+                        # ===== 평가 에피소드: 학습 안 함, 승률만 집계 =====
+                        # eval/* 통계만 기록 (학습 곡선 오염 방지)
+                        for stat_name, entries in env_stats.items():
+                            if not stat_name.startswith("eval/"):
+                                continue
+                            vals = [e[0] for e in entries]
+                            if vals:
+                                self.writer.add_scalar(
+                                    stat_name, float(np.mean(vals)), self.episode_count
+                                )
+
+                        # 이 에피소드가 실제 eval이었는지 = 해당 매치업 통계가 들어왔는지
+                        eval_key = ("eval/saboteur_vs_bot_win" if self.eval_frozen == 2
+                                    else "eval/human_vs_bot_win")
+                        if eval_key in env_stats:
+                            self.eval_ep_count += 1
+
+                        # 목표 에피소드 수 도달 → 다음 매치업 또는 평가 종료
+                        if self.eval_ep_count >= config["eval_episodes"]:
+                            if self.eval_frozen == 2:
+                                self.eval_frozen = 1        # 사보타주 고정 → 인간 측정
+                                self.eval_ep_count = 0
+                                param_channel.set_float_parameter("frozen_team", 1.0)
+                                print("[평가] 사보타주 측정 완료 → 인간 측정 (사보타주 규칙봇 고정)")
+                            else:
+                                self.in_eval = False        # 평가 종료 → 학습 재개
+                                self.eval_frozen = 0
+                                param_channel.set_float_parameter("eval_mode", 0.0)
+                                self.next_eval_step = self.total_steps + config["eval_interval"]
+                                print(f"[평가 완료] step={self.total_steps} 학습 재개")
+
+                    self.writer.flush()
 
                     # 초기화
                     self.episode_rewards.clear()
@@ -862,8 +914,9 @@ class MAPPOTrainer:
 
                 # ---- 업데이트 체크 ----
                 # 살아있는 에이전트 기준으로만 판단 (사망 에이전트의 짧은 버퍼가 블로킹하지 않도록)
+                # 평가 중에는 학습하지 않음
                 living_agents = set(self.agent_roles.keys()) - terminated_agents
-                if living_agents:
+                if not self.in_eval and living_agents:
                     living_buf_lens = [
                         len(self.buffers[aid]) for aid in living_agents
                         if len(self.buffers[aid]) > 0

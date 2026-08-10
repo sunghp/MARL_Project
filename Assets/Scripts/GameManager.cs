@@ -105,6 +105,14 @@ public class GameManager : MonoBehaviour
     public float maxEpisodeTime = 300f;
     private float episodeTimer = 0f;
 
+    // ===== 고정상대 평가 모드 =====
+    [Header("=== 평가 모드 (Inspector 또는 env param) ===")]
+    [Tooltip("평가 모드 여부 (한쪽 팀을 규칙봇으로 고정)")]
+    public bool evalMode = false;
+    [Tooltip("규칙봇으로 고정할 팀: 0=없음(전원 ML), 1=사보타주, 2=인간팀")]
+    public int frozenTeam = 0;
+    private bool controlModesApplied = false;
+
     // ===== 행동 지표 (에피소드 단위 카운터) =====
     private int shotsFired = 0;
     private int shotsHitSaboteur = 0;
@@ -210,6 +218,14 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
+        // 첫 프레임: 모든 NPCController.Start()가 끝난 뒤 제어 모드 적용
+        // (Start()보다 먼저 적용하면 useMLAgents가 Start에서 덮어써지므로 Update에서)
+        if (!controlModesApplied)
+        {
+            ApplyControlModes();
+            controlModesApplied = true;
+        }
+
         if (currentState == GameState.Playing)
         {
             UpdateShipProgress();
@@ -383,6 +399,33 @@ public class GameManager : MonoBehaviour
         if (witnesses == 0) sabotageHidden++;
     }
 
+    // ===== 평가 모드: 팀별 제어 모드 적용 =====
+    // frozenTeam: 0=없음(전원 ML), 1=사보타주 고정(규칙봇), 2=인간팀 고정(규칙봇)
+    // 고정된 팀은 규칙봇(NPCAIBrain)이, 나머지 팀은 학습 정책(ML)이 제어 → 학습팀의 절대 실력 측정
+    void ApplyControlModes()
+    {
+        if (allCharacters == null) return;
+
+        foreach (var ch in allCharacters)
+        {
+            if (ch == null) continue;
+            NPCController ctrl = ch.GetComponent<NPCController>();
+            if (ctrl == null) continue;
+
+            bool ruleBot = false;
+            if (evalMode && frozenTeam != 0 && RoleManager.Instance != null)
+            {
+                bool isSab = RoleManager.Instance.IsSaboteur(ch);
+                if (frozenTeam == 1) ruleBot = isSab;        // 사보타주 팀을 규칙봇으로
+                else if (frozenTeam == 2) ruleBot = !isSab;  // 인간팀(인간+함장)을 규칙봇으로
+            }
+            ctrl.SetControlMode(!ruleBot);   // ruleBot이면 useML=false
+        }
+
+        if (evalMode)
+            Debug.Log($"[평가 모드] frozenTeam={frozenTeam} (1=사보타주,2=인간팀) 규칙봇 고정 적용");
+    }
+
     // ===== Getter 메서드 =====
     public float GetCurrentDistance() => currentDistance;
     public float GetProgress() => currentDistance / totalDistance;
@@ -494,6 +537,9 @@ public class GameManager : MonoBehaviour
             RoleManager.Instance.AssignRoles(allCharacters);
         }
 
+        // 5-1. 평가 모드면 팀별 제어 모드 적용 (역할 배정 후)
+        ApplyControlModes();
+
         // 6. 모든 초기화 완료 후 게임 시작 (이 시점에서야 CheckWinConditions 허용)
         isGameOver = false;
         currentState = GameState.Playing;
@@ -520,5 +566,9 @@ public class GameManager : MonoBehaviour
         moveSpeed           = envParams.GetWithDefault("move_speed", moveSpeed);
         visionRange         = envParams.GetWithDefault("vision_range", visionRange);
         maxEpisodeTime      = envParams.GetWithDefault("max_episode_time", maxEpisodeTime);
+
+        // 평가 모드 파라미터 (env param이 있으면 Inspector 값 덮어씀)
+        evalMode   = envParams.GetWithDefault("eval_mode", evalMode ? 1f : 0f) > 0.5f;
+        frozenTeam = (int)envParams.GetWithDefault("frozen_team", frozenTeam);
     }
 }

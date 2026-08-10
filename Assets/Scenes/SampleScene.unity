@@ -3038,6 +3038,8 @@ MonoBehaviour:
   saboteurs: []
   humans: []
   maxEpisodeTime: 300
+  evalMode: 1
+  frozenTeam: 2
   cafeSpawnPoint: {fileID: 1581498305}
 --- !u!4 &1214160767
 Transform:
