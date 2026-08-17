@@ -17,7 +17,7 @@ Thumbs.db
 
 # ML-Agents 학습 결과 (체크포인트, TensorBoard 로그)
 results/
-checkpoints/
+trials/2/checkpoints/
 runs/
 
 # Unity 빌드
