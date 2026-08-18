@@ -56,8 +56,8 @@ CONFIG = {
     "num_layers": 2,              # 은닉층 수
 
     # === PPO 하이퍼파라미터 ===
-    "lr_actor": 3e-4,
-    "lr_critic": 3e-4,
+    "lr_actor": 1e-4,
+    "lr_critic": 1e-4,
     "gamma": 0.995,               # 할인율 (긴 에피소드 + 끝보상 환경이라 0.99보다 길게)
     "gae_lambda": 0.95,           # GAE lambda
     "clip_epsilon": 0.2,          # PPO 클리핑
@@ -66,7 +66,7 @@ CONFIG = {
     "max_grad_norm": 0.5,         # 그래디언트 클리핑
 
     # === 학습 ===
-    "total_timesteps": 1_000_000,
+    "total_timesteps": 2_000_000,
     "rollout_length": 512,        # 한 번에 수집할 스텝 수
     "ppo_epochs": 4,              # 수집한 데이터로 몇 번 업데이트
     "mini_batch_size": 128,       # 미니배치 크기
@@ -78,8 +78,8 @@ CONFIG = {
     "log_interval": 10,           # N 에피소드마다 로그
 
     # === 고정상대 평가 ===
-    "eval_interval": 20000,     # N 스텝마다 평가 (10만)
-    "eval_episodes": 5,          # 각 매치업(사보타주/인간)당 평가 에피소드 수
+    "eval_interval": 100000,     # N 스텝마다 평가 (10만)
+    "eval_episodes": 30,          # 각 매치업(사보타주/인간)당 평가 에피소드 수
 }
 
 
@@ -664,6 +664,7 @@ class MAPPOTrainer:
             side_channels=[channel, param_channel, stats_channel],
             base_port=5004,
             timeout_wait=120,
+            no_graphics=config["no_graphics"],
         )
         channel.set_configuration_parameters(time_scale=config["time_scale"])
 
