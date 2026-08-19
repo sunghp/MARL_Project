@@ -26,9 +26,10 @@ public class NPCAgent : Agent
     private RoleManager roleManager;
 
     [Header("보상 설정")]
-    public float winReward = 10f;
-    public float loseReward = -10f;
-    public float sabotageReward = 0.5f;
+    public float winReward = 5f;                  // ±10→±5: 과정 보상이 승패에 묻히지 않게 (구멍2)
+    public float loseReward = -5f;
+    public float sabotageRewardHidden = 1.0f;     // 목격 없이 부수기 (은닉 성공) — 핵심 정렬 신호
+    public float sabotageRewardWitnessed = 0.0f;  // 목격당하며 부수기: 보너스 없음(데미지 스텝보상은 그대로 받음)
     public float repairReward = 0.5f;
     public float healthChangeRewardScale = 0.01f;
 
@@ -312,10 +313,10 @@ public class NPCAgent : Agent
         previousAverageHealth = currentHealth;
     }
 
-    public void OnSabotageComplete()
+    public void OnSabotageComplete(bool wasHidden)
     {
         if (isSaboteur)
-            AddReward(sabotageReward);
+            AddReward(wasHidden ? sabotageRewardHidden : sabotageRewardWitnessed);
     }
 
     public void OnRepairComplete()

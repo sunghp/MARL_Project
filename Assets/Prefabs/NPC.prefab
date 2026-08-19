@@ -150,9 +150,10 @@ MonoBehaviour:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
   MaxStep: 0
-  winReward: 10
-  loseReward: -10
-  sabotageReward: 0.5
+  winReward: 5
+  loseReward: -5
+  sabotageRewardHidden: 1
+  sabotageRewardWitnessed: 0
   repairReward: 0.5
   healthChangeRewardScale: 0.01
   mapSize: 50

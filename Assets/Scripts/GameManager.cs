@@ -118,6 +118,7 @@ public class GameManager : MonoBehaviour
     private int shotsHitSaboteur = 0;
     private int sabotageTotal = 0;
     private int sabotageHidden = 0;
+    private int repairTotal = 0;   // 에피소드당 수리 완료 횟수 (활동량 지표)
 
     // ===== ML-Agents 헬퍼 =====
 
@@ -166,13 +167,9 @@ public class GameManager : MonoBehaviour
             recorder.Add("behavior/sabotage_hidden_rate",
                          (float)sabotageHidden / sabotageTotal);
 
-        // 0-1. 평가 모드: 실제 승패 보고 (평균 집계 = 승률)
-        //   frozenTeam==2 (인간 규칙봇, 학습된 사보타주 측정) → 사보타주 승리율
-        //   frozenTeam==1 (사보타주 규칙봇, 학습된 인간 측정)   → 인간 승리율
-        if (evalMode && frozenTeam == 2)
-            recorder.Add("eval/saboteur_vs_bot_win", humanWin ? 0f : 1f);
-        else if (evalMode && frozenTeam == 1)
-            recorder.Add("eval/human_vs_bot_win", humanWin ? 1f : 0f);
+        // 활동량 지표: 에피소드당 부수기/수리 횟수 (0에 가까우면 "멈춤" 감지)
+        recorder.Add("behavior/sabotage_count", (float)sabotageTotal);
+        recorder.Add("behavior/repair_count", (float)repairTotal);
 
         // 1. 죽은 에이전트 재활성화 (EndEpisode를 받을 수 있도록)
         foreach (var agent in allNPCAgents)
@@ -391,11 +388,10 @@ public class GameManager : MonoBehaviour
 
     // 부수기 완료될 때마다 (InteractionPoint에서 호출)
     // 목격자 = 부수기 완료 순간 visionRange 안에 있는 살아있는 인간팀 (동료 사보타주 제외)
-    public void RecordSabotage(GameObject saboteur)
+    // 현재 시점에 saboteur를 보고 있는 인간팀(비-사보타주) 수
+    public int CountWitnesses(GameObject saboteur)
     {
-        if (saboteur == null) return;
-        sabotageTotal++;
-
+        if (saboteur == null) return 0;
         int witnesses = 0;
         foreach (var ch in allCharacters)
         {
@@ -404,7 +400,20 @@ public class GameManager : MonoBehaviour
             if (Vector3.Distance(saboteur.transform.position, ch.transform.position) <= visionRange)
                 witnesses++;
         }
-        if (witnesses == 0) sabotageHidden++;
+        return witnesses;
+    }
+
+    // 부수기 완료 시 은닉 여부 집계 (판정은 NPCController가 부수는 동안 계속 체크해서 넘김)
+    public void RecordSabotage(bool wasHidden)
+    {
+        sabotageTotal++;
+        if (wasHidden) sabotageHidden++;
+    }
+
+    // 수리 완료 집계 (활동량 지표: 인간이 실제로 수리하는지)
+    public void RecordRepair()
+    {
+        repairTotal++;
     }
 
     // ===== 평가 모드: 팀별 제어 모드 적용 =====
@@ -473,6 +482,7 @@ public class GameManager : MonoBehaviour
         shotsHitSaboteur = 0;
         sabotageTotal = 0;
         sabotageHidden = 0;
+        repairTotal = 0;
 
         // 원본에서 allCharacters 복원 (RemoveCharacter로 빠진 캐릭터 복구)
         allCharacters = new List<GameObject>(allCharactersOriginal);

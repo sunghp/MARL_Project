@@ -41,6 +41,7 @@ public class NPCController : MonoBehaviour
     private InteractionPoint currentInteractionPoint;
     private float interactionTimer = 0f;
     private bool isInteracting = false;
+    private bool seenDuringSabotage = false;   // 부수는 동안 한 번이라도 목격됐는지 (구멍3: 완료 스냅샷 대신 전 구간)
 
     // ===== AI 행동 타이머 =====
     [Header("=== AI 타이머 ===")]
@@ -387,6 +388,13 @@ public class NPCController : MonoBehaviour
     {
         interactionTimer += Time.deltaTime;
 
+        // 부수는 동안 한 번이라도 목격되면 은닉 실패로 기록 (구멍3)
+        if (isSabotaging && !seenDuringSabotage && GameManager.Instance != null)
+        {
+            if (GameManager.Instance.CountWitnesses(gameObject) > 0)
+                seenDuringSabotage = true;
+        }
+
         float requiredTime = GetInteractionTime();
         if (interactionTimer >= requiredTime)
         {
@@ -569,6 +577,12 @@ public class NPCController : MonoBehaviour
         agent.isStopped = true;
         SetState(NPCState.Interacting);
 
+        // 부수기 시작 시점의 목격 여부로 초기화 (이후 매 프레임 갱신)
+        if (isSabotaging && GameManager.Instance != null)
+            seenDuringSabotage = GameManager.Instance.CountWitnesses(gameObject) > 0;
+        else
+            seenDuringSabotage = false;
+
 #if UNITY_EDITOR
         Debug.Log($"[NPC 상호작용 시작] {gameObject.name} → {currentInteractionPoint.roomName}");
 #endif
@@ -581,14 +595,18 @@ public class NPCController : MonoBehaviour
             // isSabotaging 플래그 사용: 에이전트의 행동 선택이 실제 결과에 반영됨
             currentInteractionPoint.OnInteractionComplete(gameObject, isSabotaging);
 
-            // ML-Agents 보상 콜백
+            // 보상/지표: 부수는 동안 전 구간 은닉 여부(seenDuringSabotage) 사용
             NPCAgent npcAgent = GetComponent<NPCAgent>();
-            if (npcAgent != null)
+            if (isSabotaging)
             {
-                if (isSabotaging)
-                    npcAgent.OnSabotageComplete();
-                else
-                    npcAgent.OnRepairComplete();
+                bool wasHidden = !seenDuringSabotage;
+                if (GameManager.Instance != null) GameManager.Instance.RecordSabotage(wasHidden);
+                if (npcAgent != null) npcAgent.OnSabotageComplete(wasHidden);
+            }
+            else
+            {
+                if (GameManager.Instance != null) GameManager.Instance.RecordRepair();
+                if (npcAgent != null) npcAgent.OnRepairComplete();
             }
         }
 
