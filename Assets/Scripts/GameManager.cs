@@ -120,6 +120,14 @@ public class GameManager : MonoBehaviour
     private int sabotageHidden = 0;
     private int repairTotal = 0;   // 에피소드당 수리 완료 횟수 (활동량 지표)
 
+    // ===== 목격 기록: 관찰자 → 부수는 걸 직접 본 캐릭터들 (에피소드 단위) =====
+    private Dictionary<GameObject, HashSet<GameObject>> witnessedSaboteurs =
+        new Dictionary<GameObject, HashSet<GameObject>>();
+
+    [Header("=== 플레이어 ===")]
+    [Tooltip("Python 트레이너와 연결된 학습 중에도 Player를 게임에 포함할지 (기본: 제외 → NPC 6명만으로 진행)")]
+    public bool includePlayerInTraining = false;
+
     // ===== ML-Agents 헬퍼 =====
 
     public bool IsGameOver()
@@ -170,6 +178,13 @@ public class GameManager : MonoBehaviour
         // 활동량 지표: 에피소드당 부수기/수리 횟수 (0에 가까우면 "멈춤" 감지)
         recorder.Add("behavior/sabotage_count", (float)sabotageTotal);
         recorder.Add("behavior/repair_count", (float)repairTotal);
+
+        // 고정상대 평가 결과 (트레이너가 이 키로 평가 에피소드 수를 센다)
+        // 이 에피소드가 실제로 돌았던 모드 기준 (ResetGame에서 파라미터를 새로 읽기 전)
+        if (evalMode && frozenTeam == 2)
+            recorder.Add("eval/saboteur_vs_bot_win", humanWin ? 0f : 1f);
+        else if (evalMode && frozenTeam == 1)
+            recorder.Add("eval/human_vs_bot_win", humanWin ? 1f : 0f);
 
         // 1. 죽은 에이전트 재활성화 (EndEpisode를 받을 수 있도록)
         foreach (var agent in allNPCAgents)
@@ -261,8 +276,16 @@ public class GameManager : MonoBehaviour
         captain = null;
 
         // Player 찾기 (Tag: Player)
+        // 학습 중(트레이너 연결)에는 조작하는 사람이 없으므로 기본적으로 제외 + 비활성화.
+        // 포함하면 역할(사보타주/함장)을 받은 채 멈춰있는 더미가 되어 팀 구성과 관측 슬롯이 깨진다.
         player = GameObject.FindWithTag("Player");
-        if (player != null) 
+        if (player != null && Academy.Instance.IsCommunicatorOn && !includePlayerInTraining)
+        {
+            Debug.Log("[학습 모드] Player 제외 (NPC만으로 진행)");
+            player.SetActive(false);
+            player = null;
+        }
+        if (player != null)
         {
             allCharacters.Add(player);
         }
@@ -391,6 +414,18 @@ public class GameManager : MonoBehaviour
     // 현재 시점에 saboteur를 보고 있는 인간팀(비-사보타주) 수
     public int CountWitnesses(GameObject saboteur)
     {
+        return CollectWitnesses(saboteur, false);
+    }
+
+    // 부수는 중에 호출: 목격자 수를 반환하고, 각 목격자의 "직접 목격" 기록에 saboteur를 추가
+    // (에이전트 관측의 목격 플래그 = 함장이 누구를 쏠지 추리할 근거)
+    public int RecordWitnesses(GameObject saboteur)
+    {
+        return CollectWitnesses(saboteur, true);
+    }
+
+    int CollectWitnesses(GameObject saboteur, bool record)
+    {
         if (saboteur == null) return 0;
         int witnesses = 0;
         foreach (var ch in allCharacters)
@@ -398,9 +433,26 @@ public class GameManager : MonoBehaviour
             if (ch == null || ch == saboteur || !ch.activeInHierarchy) continue;
             if (RoleManager.Instance != null && RoleManager.Instance.IsSaboteur(ch)) continue; // 동료 사보타주 제외
             if (Vector3.Distance(saboteur.transform.position, ch.transform.position) <= visionRange)
+            {
                 witnesses++;
+                if (record)
+                {
+                    if (!witnessedSaboteurs.TryGetValue(ch, out var seen))
+                    {
+                        seen = new HashSet<GameObject>();
+                        witnessedSaboteurs[ch] = seen;
+                    }
+                    seen.Add(saboteur);
+                }
+            }
         }
         return witnesses;
+    }
+
+    public bool HasWitnessedSabotage(GameObject observer, GameObject suspect)
+    {
+        return observer != null && suspect != null &&
+               witnessedSaboteurs.TryGetValue(observer, out var seen) && seen.Contains(suspect);
     }
 
     // 부수기 완료 시 은닉 여부 집계 (판정은 NPCController가 부수는 동안 계속 체크해서 넘김)
@@ -445,6 +497,10 @@ public class GameManager : MonoBehaviour
 
     // ===== Getter 메서드 =====
     public float GetCurrentDistance() => currentDistance;
+
+    // 에피소드 내내(사망해도) 순서가 고정된 캐릭터 목록 — 에이전트 관측/사격 슬롯 기준
+    public IReadOnlyList<GameObject> GetCharacterSlots() =>
+        allCharactersOriginal.Count > 0 ? allCharactersOriginal : allCharacters;
     public float GetProgress() => currentDistance / totalDistance;
     public bool IsShipStopped() => shipStopped;
 
@@ -483,6 +539,7 @@ public class GameManager : MonoBehaviour
         sabotageTotal = 0;
         sabotageHidden = 0;
         repairTotal = 0;
+        witnessedSaboteurs.Clear();
 
         // 원본에서 allCharacters 복원 (RemoveCharacter로 빠진 캐릭터 복구)
         allCharacters = new List<GameObject>(allCharactersOriginal);

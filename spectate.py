@@ -59,7 +59,7 @@ def spectate(checkpoint_path, time_scale=1.0, episodes=5, stochastic=False):
     for actor in trainer.actors.values():
         actor.eval()
 
-    L = config["local_obs_dim"]          # 55 (앞부분 = Actor용 로컬 관측)
+    L = config["local_obs_dim"]          # 64 (앞부분 = Actor용 로컬 관측)
 
     # 2) Unity 환경 (화면 ON, 정상 속도)
     engine_channel = EngineConfigurationChannel()
@@ -110,9 +110,9 @@ def spectate(checkpoint_path, time_scale=1.0, episodes=5, stochastic=False):
             local_by_id = {}
             for agent_id in decision_steps.agent_id:
                 agent_id = int(agent_id)
-                full = decision_steps[agent_id].obs[0]        # 97차원
-                local_by_id[agent_id] = full[:L]              # 앞 55 = Actor
-                all_agent_global[agent_id] = full[L:]         # 뒤 42 = 전역
+                full = decision_steps[agent_id].obs[0]        # 120차원
+                local_by_id[agent_id] = full[:L]              # 앞 64 = Actor
+                all_agent_global[agent_id] = full[L:]         # 뒤 56 = 전역
 
                 if agent_id not in agent_roles:
                     role = trainer.identify_role(full)

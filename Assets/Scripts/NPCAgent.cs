@@ -5,14 +5,14 @@ using Unity.MLAgents.Sensors;
 using System.Collections.Generic;
 
 /// <summary>
-/// MAPPO 에이전트 (42차원 관측, 2 브랜치 행동)
-///
-/// 관측 (42):
-///   자기 정보(5) + 게임 상태(3) + 방 상태(24) + 다른 캐릭터(10)
+/// MAPPO 에이전트 (관측 120 = Actor 64 + Critic 56, 2 브랜치 행동)
 ///
 /// 행동:
 ///   Branch 0 (이산 9): 방 선택 0~7, 대기 8
-///   Branch 1 (이산 4): 없음(0), 부수기(1), 고치기(2), 사격(3)
+///   Branch 1 (이산 9): 없음(0), 부수기(1), 고치기(2), 사격 슬롯0~5(3~8)
+///
+/// 캐릭터 슬롯: GameManager.GetCharacterSlots()(에피소드 내내 고정된 순서)에서 자기 자신을 뺀 순서.
+///   관측의 "다른 캐릭터 k번"과 사격 "슬롯 k"가 같은 캐릭터를 가리킨다.
 /// </summary>
 public class NPCAgent : Agent
 {
@@ -44,7 +44,8 @@ public class NPCAgent : Agent
 
     // ===== 상수 =====
     private const int MAX_ROOMS = 8;
-    private const int MAX_OTHER_CHARACTERS = 5;
+    private const int MAX_OTHER_CHARACTERS = 6;   // 7명 이하 게임 가정 (현재 NPC 6명)
+    private const int SHOOT_ACTION_OFFSET = 3;      // Branch 1의 3~8 = 슬롯 0~5 사격
 
     // ===================================================================
     // 초기화
@@ -82,22 +83,44 @@ public class NPCAgent : Agent
     }
 
     // ===================================================================
-    // Observations (42차원)
+    // Observations (120차원 = LOCAL 64 + GLOBAL 56)
     // ===================================================================
     //
-    // 자기 정보:      2(역할) + 3(위치) = 5
-    // 게임 상태:      3
-    // 방 상태:        8방 × 3(거리, 안정도, 사용중) = 24
-    // 다른 캐릭터:    5명 × 2(x, z) = 10
-    // 총합:           42
+    // LOCAL (Actor, 부분관측):
+    //   자기 정보 5 (역할2 + 위치3) + 공개 게임 상태 3
+    //   방 8 × 4 (거리, 안정도, 사용중, 시야플래그)                  = 32
+    //   다른 캐릭터 6 × 4 (x, z, 시야플래그, 부수는 걸 직접 목격함)   = 24
+    //   합계 64
+    //
+    // GLOBAL (Critic, 전역 — CTDE이므로 실제 역할까지 포함):
+    //   자기 정보 5 + 게임 상태 3
+    //   방 8 × 3 (거리, 안정도, 사용중)                              = 24
+    //   다른 캐릭터 6 × 4 (x, z, 생존, 사보타주 여부)                = 24
+    //   합계 56
     //
     // ===================================================================
-    private const int LOCAL_OBS_DIM = 55;
-    private const int GLOBAL_OBS_DIM = 42;
+    private const int LOCAL_OBS_DIM = 64;
+    private const int GLOBAL_OBS_DIM = 56;
+
+    // 고정 슬롯 순서로 k번째 "다른 캐릭터" (없으면 null)
+    GameObject GetOtherSlot(int k)
+    {
+        if (gameManager == null) return null;
+        var slots = gameManager.GetCharacterSlots();
+        int idx = 0;
+        foreach (var ch in slots)
+        {
+            if (ch == gameObject) continue;
+            if (idx == k) return ch;
+            idx++;
+        }
+        return null;
+    }
 
     public override void CollectObservations(VectorSensor sensor)
     {
         if (roleManager == null) roleManager = RoleManager.Instance;
+        if (gameManager == null) gameManager = GameManager.Instance;
         if (roleManager != null) {
             isSaboteur = roleManager.IsSaboteur(gameObject);
             isCaptain  = roleManager.IsCaptain(gameObject);
@@ -110,7 +133,7 @@ public class NPCAgent : Agent
         float distProgress = gameManager != null ? gameManager.GetDistanceProgress() : 0f;
         float aliveRatio   = gameManager != null ? gameManager.GetAliveHumanRatio() : 0f;
 
-        // ===================== LOCAL (Actor, 55) =====================
+        // ===================== LOCAL (Actor, 64) =====================
         // 자기 정보 (5)
         sensor.AddObservation(isSaboteur ? 1f : 0f);
         sensor.AddObservation(isCaptain ? 1f : 0f);
@@ -131,7 +154,7 @@ public class NPCAgent : Agent
 
                 bool alerted = allRooms[i].GetCurrentHealth() <= alertThreshold;
                 bool visible = (dist <= visionRange) || alerted;
-                
+
                 if (visible)
                 {
                     sensor.AddObservation(allRooms[i].GetHealthPercent());        // 안정도
@@ -154,39 +177,22 @@ public class NPCAgent : Agent
             }
         }
 
-        // 캐릭터 5명 (5 × 3 = 15): 시야 안일 때만 위치 공개
-        int cCount = 0;
-        if (gameManager != null && gameManager.allCharacters != null)
+        // 다른 캐릭터 6명 (6 × 4 = 24): 고정 슬롯 순서. 위치는 시야 안일 때만,
+        // 목격 플래그는 "내가 이 캐릭터가 부수는 걸 직접 본 적 있음" (추리 근거)
+        for (int k = 0; k < MAX_OTHER_CHARACTERS; k++)
         {
-            foreach (var ch in gameManager.allCharacters)
-            {
-                if (ch == gameObject) continue;
-                if (cCount >= MAX_OTHER_CHARACTERS) break;
+            GameObject ch = GetOtherSlot(k);
+            bool alive = ch != null && ch.activeInHierarchy;
+            bool visible = alive &&
+                Vector3.Distance(transform.position, ch.transform.position) <= visionRange;
 
-                if (ch != null && ch.activeInHierarchy &&
-                    Vector3.Distance(transform.position, ch.transform.position) <= visionRange)
-                {
-                    sensor.AddObservation(ch.transform.position.x / mapSize);
-                    sensor.AddObservation(ch.transform.position.z / mapSize);
-                    sensor.AddObservation(1f);   // visFlag
-                }
-                else
-                {
-                    sensor.AddObservation(0f);
-                    sensor.AddObservation(0f);
-                    sensor.AddObservation(0f);
-                }
-                cCount++;
-            }
-        }
-        for (int i = cCount; i < MAX_OTHER_CHARACTERS; i++)
-        {
-            sensor.AddObservation(0f);
-            sensor.AddObservation(0f);
-            sensor.AddObservation(0f);
+            sensor.AddObservation(visible ? ch.transform.position.x / mapSize : 0f);
+            sensor.AddObservation(visible ? ch.transform.position.z / mapSize : 0f);
+            sensor.AddObservation(visible ? 1f : 0f);
+            sensor.AddObservation(alive && gameManager.HasWitnessedSabotage(gameObject, ch) ? 1f : 0f);
         }
 
-        // ===================== GLOBAL (Critic, 42) =====================
+        // ===================== GLOBAL (Critic, 56) =====================
         // 자기 정보 (5)
         sensor.AddObservation(isSaboteur ? 1f : 0f);
         sensor.AddObservation(isCaptain ? 1f : 0f);
@@ -215,33 +221,17 @@ public class NPCAgent : Agent
             }
         }
 
-        // 모든 캐릭터 (5 × 2 = 10): 가림 없음
-        int gCount = 0;
-        if (gameManager != null && gameManager.allCharacters != null)
+        // 모든 캐릭터 (6 × 4 = 24): 가림 없음, 실제 역할 포함 (Critic 전용)
+        for (int k = 0; k < MAX_OTHER_CHARACTERS; k++)
         {
-            foreach (var ch in gameManager.allCharacters)
-            {
-                if (ch == gameObject) continue;
-                if (gCount >= MAX_OTHER_CHARACTERS) break;
-                if (ch != null && ch.activeInHierarchy)
-                {
-                    sensor.AddObservation(ch.transform.position.x / mapSize);
-                    sensor.AddObservation(ch.transform.position.z / mapSize);
-                }
-                else
-                {
-                    sensor.AddObservation(0f);
-                    sensor.AddObservation(0f);
-                }
-                gCount++;
-            }
+            GameObject ch = GetOtherSlot(k);
+            bool alive = ch != null && ch.activeInHierarchy;
+            sensor.AddObservation(alive ? ch.transform.position.x / mapSize : 0f);
+            sensor.AddObservation(alive ? ch.transform.position.z / mapSize : 0f);
+            sensor.AddObservation(alive ? 1f : 0f);
+            sensor.AddObservation(alive && roleManager != null && roleManager.IsSaboteur(ch) ? 1f : 0f);
         }
-        for (int i = gCount; i < MAX_OTHER_CHARACTERS; i++)
-        {
-            sensor.AddObservation(0f);
-            sensor.AddObservation(0f);
-        }
-        // 합계: 55 + 42 = 97
+        // 합계: 64 + 56 = 120
     }
 
     // ===================================================================
@@ -260,7 +250,14 @@ public class NPCAgent : Agent
         if (!npcController.IsUsingML()) return;
 
         int roomChoice = actions.DiscreteActions[0];        // 0~7: 방 선택, 8: 대기
-        int interactionChoice = actions.DiscreteActions[1]; // 0: 없음, 1: 부수기, 2: 고치기, 3: 사격
+        int interactionChoice = actions.DiscreteActions[1]; // 0: 없음, 1: 부수기, 2: 고치기, 3~8: 슬롯 사격
+
+        // ===== 사격 처리 (방 근처일 필요 없음, 대상이 시야 안이어야 함) =====
+        if (interactionChoice >= SHOOT_ACTION_OFFSET)
+        {
+            if (isCaptain)
+                TryShoot(interactionChoice - SHOOT_ACTION_OFFSET);
+        }
 
         // ===== 이동 처리 =====
         // 상호작용 진행 중이면 이동 명령 무시 (중단 방지)
@@ -272,21 +269,17 @@ public class NPCAgent : Agent
         // roomChoice == 8: 현재 위치 유지
 
         // ===== 상호작용 처리 =====
-        if (interactionChoice > 0 && !npcController.IsInteracting() && npcController.IsNearInteractionPoint())
+        if ((interactionChoice == 1 || interactionChoice == 2) &&
+            !npcController.IsInteracting() && npcController.IsNearInteractionPoint())
         {
-            switch (interactionChoice)
+            if (interactionChoice == 1)
             {
-                case 1: // 부수기
-                    if (isSaboteur)
-                        npcController.TryStartSabotage();
-                    break;
-                case 2: // 고치기
-                    npcController.TryStartRepair();
-                    break;
-                case 3: // 사격
-                    if (isCaptain)
-                        TryShoot();
-                    break;
+                if (isSaboteur)
+                    npcController.TryStartSabotage();
+            }
+            else
+            {
+                npcController.TryStartRepair();
             }
         }
 
@@ -319,10 +312,11 @@ public class NPCAgent : Agent
             AddReward(wasHidden ? sabotageRewardHidden : sabotageRewardWitnessed);
     }
 
-    public void OnRepairComplete()
+    // repairedFraction: 실제로 회복된 양 / repairAmount (0~1). 이미 만땅인 방 수리는 0 → 보상 없음
+    public void OnRepairComplete(float repairedFraction)
     {
         if (!isSaboteur)
-            AddReward(repairReward);
+            AddReward(repairReward * Mathf.Clamp01(repairedFraction));
     }
 
     public void OnGameEnd(bool humanWin)
@@ -342,35 +336,17 @@ public class NPCAgent : Agent
     // 함장 사격
     // ===================================================================
 
-    void TryShoot()
+    void TryShoot(int slot)
     {
         var captainGun = GetComponent<CaptainGun>();
         if (captainGun == null || captainGun.GetRemainingBullets() <= 0) return;
 
-        // 가장 가까운 캐릭터 타겟팅
-        GameObject bestTarget = null;
-        float bestDist = float.MaxValue;
+        // 선택한 슬롯의 캐릭터: 살아있고 시야 안이어야 사격 가능
+        GameObject target = GetOtherSlot(slot);
+        if (target == null || !target.activeInHierarchy) return;
+        if (Vector3.Distance(transform.position, target.transform.position) > gameManager.visionRange) return;
 
-        if (gameManager != null && gameManager.allCharacters != null)
-        {
-            foreach (var character in gameManager.allCharacters)
-            {
-                if (character == gameObject || character == null || !character.activeInHierarchy)
-                    continue;
-
-                float dist = Vector3.Distance(transform.position, character.transform.position);
-                if (dist < bestDist)
-                {
-                    bestDist = dist;
-                    bestTarget = character;
-                }
-            }
-        }
-
-        if (bestTarget != null)
-        {
-            captainGun.TryExecuteTarget(bestTarget);
-        }
+        captainGun.TryExecuteTarget(target);
     }
 
     // ===================================================================
@@ -394,6 +370,6 @@ public class NPCAgent : Agent
 
         if (Input.GetKey(KeyCode.E)) discreteActions[1] = 2;
         if (Input.GetKey(KeyCode.Q)) discreteActions[1] = 1;
-        if (Input.GetKey(KeyCode.F)) discreteActions[1] = 3;
+        if (Input.GetKey(KeyCode.F)) discreteActions[1] = SHOOT_ACTION_OFFSET; // 슬롯 0 사격
     }
 }

@@ -341,8 +341,10 @@ public class CaptainGun : MonoBehaviour
         // 행동 지표: 사격 기록
         if (GameManager.Instance != null) GameManager.Instance.RecordShot(wasSaboteur);
 
+        PlayerController pc = target.GetComponent<PlayerController>();
         NPCController npc = target.GetComponent<NPCController>();
-        if (npc != null) npc.Die();
+        if (pc != null) pc.Die();
+        else if (npc != null) npc.Die();
 
         OnExecution?.Invoke(target, wasSaboteur);
 

@@ -388,10 +388,10 @@ public class NPCController : MonoBehaviour
     {
         interactionTimer += Time.deltaTime;
 
-        // 부수는 동안 한 번이라도 목격되면 은닉 실패로 기록 (구멍3)
-        if (isSabotaging && !seenDuringSabotage && GameManager.Instance != null)
+        // 부수는 동안 한 번이라도 목격되면 은닉 실패로 기록 (구멍3) + 목격자별 기록 갱신
+        if (isSabotaging && GameManager.Instance != null)
         {
-            if (GameManager.Instance.CountWitnesses(gameObject) > 0)
+            if (GameManager.Instance.RecordWitnesses(gameObject) > 0)
                 seenDuringSabotage = true;
         }
 
@@ -579,7 +579,7 @@ public class NPCController : MonoBehaviour
 
         // 부수기 시작 시점의 목격 여부로 초기화 (이후 매 프레임 갱신)
         if (isSabotaging && GameManager.Instance != null)
-            seenDuringSabotage = GameManager.Instance.CountWitnesses(gameObject) > 0;
+            seenDuringSabotage = GameManager.Instance.RecordWitnesses(gameObject) > 0;
         else
             seenDuringSabotage = false;
 
@@ -593,7 +593,7 @@ public class NPCController : MonoBehaviour
         if (currentInteractionPoint != null)
         {
             // isSabotaging 플래그 사용: 에이전트의 행동 선택이 실제 결과에 반영됨
-            currentInteractionPoint.OnInteractionComplete(gameObject, isSabotaging);
+            float healthChange = currentInteractionPoint.OnInteractionComplete(gameObject, isSabotaging);
 
             // 보상/지표: 부수는 동안 전 구간 은닉 여부(seenDuringSabotage) 사용
             NPCAgent npcAgent = GetComponent<NPCAgent>();
@@ -605,8 +605,13 @@ public class NPCController : MonoBehaviour
             }
             else
             {
-                if (GameManager.Instance != null) GameManager.Instance.RecordRepair();
-                if (npcAgent != null) npcAgent.OnRepairComplete();
+                // 실제로 회복된 경우만 수리로 인정 (만땅인 방 수리 파밍 방지)
+                if (healthChange > 0f)
+                {
+                    float repairAmount = GameManager.Instance != null ? GameManager.Instance.repairAmount : 15f;
+                    if (GameManager.Instance != null) GameManager.Instance.RecordRepair();
+                    if (npcAgent != null) npcAgent.OnRepairComplete(healthChange / repairAmount);
+                }
             }
         }
 

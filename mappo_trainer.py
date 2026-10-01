@@ -43,9 +43,9 @@ CONFIG = {
     "time_scale": 20.0,           # 게임 속도 배율 (높을수록 빠름)
 
     # === 관측/행동 공간 ===
-    "local_obs_dim": 55,     # Actor 입력 (부분 관측)
-    "global_obs_dim": 42,    # Critic 입력 (전역, per-agent)
-    "action_branches": [9, 4],    # [방 선택(0-8), 상호작용(0-3)]
+    "local_obs_dim": 64,     # Actor 입력 (부분 관측)
+    "global_obs_dim": 56,    # Critic 입력 (전역, per-agent)
+    "action_branches": [9, 9],    # [방 선택(0-8), 상호작용(0 없음,1 부수기,2 고치기,3-8 슬롯 사격)]
 
     # === 팀 구성 ===
     "max_human_team": 4,          # 인간3 + 함장1
@@ -89,7 +89,7 @@ CONFIG = {
 
 class Actor(nn.Module):
     """
-    관측(42차원)을 받아서 행동 확률을 출력.
+    로컬 관측(64차원)을 받아서 행동 확률을 출력.
     행동 브랜치가 2개(방 선택, 상호작용)이므로 헤드도 2개.
     """
 
@@ -172,8 +172,8 @@ class Actor(nn.Module):
 class CentralizedCritic(nn.Module):
     """
     MAPPO의 핵심: 팀원 전체의 관측을 concat해서 가치 추정.
-    - Human팀 critic: 인간3 + 함장1 = 최대 4명의 관측 (4 * 42 = 168)
-    - Saboteur팀 critic: 사보타주2 = 최대 2명의 관측 (2 * 42 = 84)
+    - Human팀 critic: 인간3 + 함장1 = 최대 4명의 관측 (4 * 56 = 224)
+    - Saboteur팀 critic: 사보타주2 = 최대 2명의 관측 (2 * 56 = 112)
 
     에이전트가 죽으면 해당 슬롯은 0으로 패딩.
     """
@@ -241,14 +241,17 @@ class RolloutBuffer:
     def __len__(self):
         return len(self.obs)
 
-    def compute_gae(self, last_value, gamma, gae_lambda):
+    def compute_gae(self, last_value, gamma, gae_lambda, n=None):
         """
-        Generalized Advantage Estimation 계산.
+        Generalized Advantage Estimation 계산 (앞 n개 전이만).
+        last_value: n번째 전이 다음 상태의 가치 V(s_n) (종료면 0)
         반환: (returns, advantages) 리스트
         """
-        rewards = self.rewards
-        dones = self.dones
-        values = self.values + [last_value]
+        if n is None:
+            n = len(self.rewards)
+        rewards = self.rewards[:n]
+        dones = self.dones[:n]
+        values = self.values[:n] + [last_value]
 
         advantages = []
         gae = 0.0
@@ -261,13 +264,21 @@ class RolloutBuffer:
         returns = [adv + val for adv, val in zip(advantages, values[:-1])]
         return returns, advantages
 
-    def to_tensors(self, returns, advantages, device):
-        """numpy/list → PyTorch 텐서 변환"""
+    def drop_first(self, n):
+        """앞 n개 전이 삭제 (학습에 쓴 부분만 버리고 나머지는 다음 rollout으로 이월)"""
+        for lst in (self.obs, self.team_obs, self.actions, self.log_probs,
+                    self.rewards, self.dones, self.values):
+            del lst[:n]
+
+    def to_tensors(self, returns, advantages, device, n=None):
+        """numpy/list → PyTorch 텐서 변환 (앞 n개 전이만)"""
+        if n is None:
+            n = len(self.obs)
         return {
-            "obs": torch.FloatTensor(np.array(self.obs)).to(device),
-            "team_obs": torch.FloatTensor(np.array(self.team_obs)).to(device),
-            "actions": torch.LongTensor(np.array(self.actions)).to(device),
-            "log_probs": torch.FloatTensor(np.array(self.log_probs)).to(device),
+            "obs": torch.FloatTensor(np.array(self.obs[:n])).to(device),
+            "team_obs": torch.FloatTensor(np.array(self.team_obs[:n])).to(device),
+            "actions": torch.LongTensor(np.array(self.actions[:n])).to(device),
+            "log_probs": torch.FloatTensor(np.array(self.log_probs[:n])).to(device),
             "returns": torch.FloatTensor(np.array(returns)).to(device),
             "advantages": torch.FloatTensor(np.array(advantages)).to(device),
         }
@@ -455,6 +466,7 @@ class MAPPOTrainer:
         # --- 역할별 데이터 수집 ---
         role_data = defaultdict(list)   # role → [tensor_dict, ...]
         team_data = defaultdict(list)   # team → [tensor_dict, ...]
+        used_counts = {}                # agent_id → 학습에 사용한 전이 수
 
         for agent_id, buffer in self.buffers.items():
             if len(buffer) == 0:
@@ -465,16 +477,21 @@ class MAPPOTrainer:
             if role is None or team is None:
                 continue
 
-            # 마지막 value 추정 (bootstrap)
-            last_value = 0.0  # 에피소드 끝나면 0
-            if not buffer.dones[-1]:
-                # 아직 안 끝남 → 현재 value로 bootstrap
-                last_value = buffer.values[-1]
+            if buffer.dones[-1]:
+                # 에피소드 종료 → 전체 사용, bootstrap 0
+                n_train, last_value = len(buffer), 0.0
+            else:
+                # 에피소드 진행 중: 마지막 전이의 보상은 다음 decision step에 도착하므로 아직 미완성.
+                # 마지막 전이는 다음 rollout으로 이월하고, 그 상태의 V(s)로 직전까지를 bootstrap.
+                n_train, last_value = len(buffer) - 1, buffer.values[-1]
+            if n_train == 0:
+                continue
+            used_counts[agent_id] = n_train
 
             returns, advantages = buffer.compute_gae(
-                last_value, config["gamma"], config["gae_lambda"]
+                last_value, config["gamma"], config["gae_lambda"], n_train
             )
-            tensors = buffer.to_tensors(returns, advantages, self.device)
+            tensors = buffer.to_tensors(returns, advantages, self.device, n_train)
             tensors["role"] = role
             tensors["team"] = team
 
@@ -579,9 +596,12 @@ class MAPPOTrainer:
             if cn > 0:
                 self.writer.add_scalar(f"loss/critic_{team}", closs_acc / cn, self.total_steps)
 
-        # --- 버퍼 초기화 ---
-        for buffer in self.buffers.values():
-            buffer.clear()
+        # --- 버퍼 정리: 학습에 쓴 전이만 삭제 (미완성 마지막 전이는 이월) ---
+        for agent_id, buffer in self.buffers.items():
+            if agent_id in used_counts:
+                buffer.drop_first(used_counts[agent_id])
+            elif len(buffer) > 0 and buffer.dones[-1]:
+                buffer.clear()
 
     # ============================================================
     # 저장/불러오기
@@ -745,7 +765,13 @@ class MAPPOTrainer:
                     elapsed = time.time() - episode_start_time
                     env_stats = stats_channel.get_and_reset_stats()
 
-                    if not self.in_eval:
+                    # 파라미터 반영이 한 에피소드 늦기 때문에(Unity는 이전 에피소드 종료 시 리셋하며 읽음)
+                    # 평가 종료 직후 에피소드는 아직 규칙봇이 섞인 평가 모드로 돌았을 수 있음 → 학습에서 제외
+                    ran_as_eval = any(k.startswith("eval/") for k in env_stats)
+
+                    if not self.in_eval and ran_as_eval:
+                        print("[건너뜀] 평가 모드로 진행된 에피소드 → 학습 데이터에서 제외")
+                    elif not self.in_eval:
                         # ===== 학습 에피소드: 업데이트 + 학습 곡선 기록 =====
                         has_data = any(len(buf) > 0 for buf in self.buffers.values())
                         if has_data:
@@ -847,9 +873,9 @@ class MAPPOTrainer:
                 all_agent_global = {}
                 for agent_id in decision_steps.agent_id:
                     agent_id = int(agent_id)
-                    full = decision_steps[agent_id].obs[0]  # 97차원
-                    all_agent_local[agent_id] = full[:L]  # 앞 55 = Actor용
-                    all_agent_global[agent_id] = full[L:]  # 뒤 42 = Critic용
+                    full = decision_steps[agent_id].obs[0]  # 120차원
+                    all_agent_local[agent_id] = full[:L]  # 앞 64 = Actor용
+                    all_agent_global[agent_id] = full[L:]  # 뒤 56 = Critic용
 
                     if agent_id not in self.agent_roles:
                         role = self.identify_role(full)  # 앞부분이 self라 그대로 OK

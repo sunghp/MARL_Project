@@ -44,13 +44,15 @@ public class InteractionPoint : MonoBehaviour
     }
 
     // ===== 상호작용 완료 처리 =====
-    public void OnInteractionComplete(GameObject user, bool isSaboteur)
+    // 반환: 실제 안정도 변화량 (부수기는 음수, 고치기는 양수, 만땅 수리는 0)
+    public float OnInteractionComplete(GameObject user, bool isSaboteur)
     {
         if (SystemHealth.Instance == null)
         {
             Debug.LogError("SystemHealth가 없습니다!");
-            return;
+            return 0f;
         }
+        float healthBefore = currentHealth;
 
         if (isSaboteur)
         {
@@ -99,6 +101,8 @@ public class InteractionPoint : MonoBehaviour
         // 사용 상태 해제
         isBeingUsed = false;
         currentUser = null;
+
+        return currentHealth - healthBefore;
     }
 
     // ===== 상호작용 시작 =====
