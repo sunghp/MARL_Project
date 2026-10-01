@@ -179,6 +179,10 @@ public class GameManager : MonoBehaviour
         recorder.Add("behavior/sabotage_count", (float)sabotageTotal);
         recorder.Add("behavior/repair_count", (float)repairTotal);
 
+        // 승패 결과: 트레이너가 승률 집계 + 죽은 에이전트(재활성화 시 새 episode id라 보상을 못 받음)의
+        // 게임 종료 보상 귀속에 사용
+        recorder.Add("outcome/human_win", humanWin ? 1f : 0f);
+
         // 고정상대 평가 결과 (트레이너가 이 키로 평가 에피소드 수를 센다)
         // 이 에피소드가 실제로 돌았던 모드 기준 (ResetGame에서 파라미터를 새로 읽기 전)
         if (evalMode && frozenTeam == 2)

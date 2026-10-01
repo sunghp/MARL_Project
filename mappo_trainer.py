@@ -65,6 +65,11 @@ CONFIG = {
     "value_coef": 0.5,            # 가치 손실 가중치
     "max_grad_norm": 0.5,         # 그래디언트 클리핑
 
+    # === Unity 보상 상수 (NPCAgent.winReward / loseReward와 동일하게) ===
+    # 죽은 에이전트는 게임 종료 보상을 직접 못 받으므로 트레이너가 마지막 전이에 대신 붙인다
+    "win_reward": 5.0,
+    "lose_reward": -5.0,
+
     # === 학습 ===
     "total_timesteps": 2_000_000,
     "rollout_length": 512,        # 한 번에 수집할 스텝 수
@@ -353,7 +358,8 @@ class MAPPOTrainer:
         # --- 통계 ---
         self.episode_rewards = defaultdict(float)
         self.episode_count = 0
-        self.total_steps = 0
+        self.total_steps = 0      # 학습 스텝 (평가 중 스텝은 제외)
+        self.eval_steps = 0       # 평가에 쓴 스텝
 
         # --- 고정상대 평가 상태 ---
         self.in_eval = False        # 평가 중 여부
@@ -714,6 +720,7 @@ class MAPPOTrainer:
         episode_steps = 0          # [수정] 실제 에피소드 길이 (업데이트로 리셋되지 않음)
         episode_start_time = time.time()
         terminated_agents = set()
+        died_early = set()         # 게임 종료 전에 죽어서 terminal을 먼저 받은 에이전트
 
         try:
             while self.total_steps < config["total_timesteps"]:
@@ -731,16 +738,20 @@ class MAPPOTrainer:
                 decision_steps, terminal_steps = env.get_steps(behavior_name)
 
                 # ---- 종료된 에이전트 처리 ----
+                # ML-Agents 동작: 죽어서 SetActive(false)된 에이전트는 그 즉시 terminal을 보내고,
+                # 게임 종료 시 재활성화되면 "새 episode id"를 받는다. 그래서 게임 종료 exchange에는
+                # 이번 에피소드에 decision이 한 번도 없던 id(= 시체)의 terminal이 섞여 온다.
+                # 이 terminal은 리셋 후 관측/역할이라 학습에 쓸 수 없으므로 개수만 센다.
+                corpse_terminals = 0
+                term_progress = {}
                 for agent_id in terminal_steps.agent_id:
                     agent_id = int(agent_id)
 
-                    # [unknown 수정] 아직 역할 미등록이면 terminal 관측으로 등록
-                    #   (decision_steps에 한 번도 안 잡히고 바로 죽는 에이전트 대비)
                     if agent_id not in self.agent_roles:
-                        full_t = terminal_steps[agent_id].obs[0]
-                        role_t = self.identify_role(full_t)
-                        self.agent_roles[agent_id] = role_t
-                        self.agent_teams[agent_id] = self.get_team(role_t)
+                        corpse_terminals += 1
+                        continue
+                    # obs[6] = 항해 진행도: 사망 terminal은 리셋 전(>0), 게임 종료 terminal은 리셋 후(0)
+                    term_progress[agent_id] = float(terminal_steps[agent_id].obs[0][6])
 
                     # 마지막 보상 기록
                     reward = terminal_steps[agent_id].reward
@@ -754,16 +765,43 @@ class MAPPOTrainer:
                     terminated_agents.add(agent_id)
 
                 # ---- 에피소드 종료 감지 ----
-                # 등록된 에이전트 전원이 terminated이거나, decision이 0인데 terminal이 있으면 종료
+                # 등록된 에이전트 전원이 terminated일 때만 종료.
+                # (decision 없이 terminal만 온 exchange는 "누가 죽음"일 뿐 게임 종료가 아니다.
+                #  예전엔 이걸 종료로 보고 env.reset()을 불러 게임 도중에 에피소드를 잘랐다.)
                 all_known_done = (
                     len(self.agent_roles) > 0
                     and set(self.agent_roles.keys()).issubset(terminated_agents)
                 )
-                if all_known_done or (len(decision_steps) == 0 and len(terminal_steps) > 0):
+                if not all_known_done:
+                    died_early.update(term_progress.keys())
+                if all_known_done:
                     self.episode_count += 1
 
                     elapsed = time.time() - episode_start_time
                     env_stats = stats_channel.get_and_reset_stats()
+
+                    # 승패 결과 (Unity GameManager가 outcome/human_win으로 보고)
+                    outcome = env_stats.get("outcome/human_win")
+                    human_won = (outcome[-1][0] > 0.5) if outcome else None
+
+                    # 죽은 에이전트에게 게임 종료 보상 귀속 (재활성화된 새 id 쪽으로 가버린 보상 복구)
+                    if human_won is not None:
+                        dead = set(died_early)
+                        # 같은 exchange에서 죽고 곧바로 게임이 끝난 경우(결정타 사격):
+                        # 시체 terminal 수 - 이전 사망자 수만큼, 리셋 전 관측(진행도 > 0)인 에이전트를 사망자로 판정
+                        n_same = corpse_terminals - len(died_early)
+                        if n_same > 0:
+                            cands = sorted(
+                                (aid for aid in term_progress if aid not in dead),
+                                key=lambda aid: term_progress[aid], reverse=True,
+                            )
+                            dead.update(aid for aid in cands[:n_same] if term_progress[aid] > 0)
+                        for aid in dead:
+                            team_won = human_won if self.agent_teams[aid] == "human_team" else not human_won
+                            r = config["win_reward"] if team_won else config["lose_reward"]
+                            self.episode_rewards[aid] += r
+                            if len(self.buffers[aid]) > 0:
+                                self.buffers[aid].rewards[-1] += r
 
                     # 파라미터 반영이 한 에피소드 늦기 때문에(Unity는 이전 에피소드 종료 시 리셋하며 읽음)
                     # 평가 종료 직후 에피소드는 아직 규칙봇이 섞인 평가 모드로 돌았을 수 있음 → 학습에서 제외
@@ -799,10 +837,9 @@ class MAPPOTrainer:
                                 f"reward/{role}", float(np.mean(rewards)), self.episode_count
                             )
 
-                        if role_rewards.get("saboteur"):
-                            sab_won = 1.0 if float(np.mean(role_rewards["saboteur"])) > 0 else 0.0
+                        if human_won is not None:
                             self.writer.add_scalar(
-                                "outcome/saboteur_win_rate", sab_won, self.episode_count
+                                "outcome/saboteur_win_rate", 0.0 if human_won else 1.0, self.episode_count
                             )
 
                         # 행동 지표 + Unity stats (학습 중엔 eval/* 안 옴)
@@ -853,6 +890,7 @@ class MAPPOTrainer:
                     self.episode_rewards.clear()
                     self.buffers.clear()
                     terminated_agents.clear()
+                    died_early.clear()
                     episode_start_time = time.time()
                     steps_since_update = 0
                     episode_steps = 0
@@ -935,7 +973,10 @@ class MAPPOTrainer:
                 env.set_actions(behavior_name, action_tuple)
                 env.step()
 
-                self.total_steps += len(decision_steps)
+                if self.in_eval:
+                    self.eval_steps += len(decision_steps)
+                else:
+                    self.total_steps += len(decision_steps)
                 steps_since_update += len(decision_steps)
                 episode_steps += len(decision_steps)
 
