@@ -1,0 +1,4 @@
+{"name": "random_vs_random", "games": 150, "human_win_rate": 0.713, "mean_duration_s": 67.5, "reasons": {"목적지 도착": 97, "인간과 동수": 43, "모든 사보타주 제거": 10}}
+{"name": "random_vs_random_no_shoot", "games": 150, "human_win_rate": 1.0, "mean_duration_s": 100.0, "reasons": {"목적지 도착": 150}}
+{"name": "random_sab_vs_bot_humans", "games": 150, "human_win_rate": 1.0, "mean_duration_s": 100.0, "reasons": {"목적지 도착": 150}}
+{"name": "random_humans_vs_bot_sab", "games": 150, "human_win_rate": 0.113, "mean_duration_s": 35.8, "reasons": {"인간과 동수": 59, "ElectronicRoom 완전 파괴": 26, "모든 사보타주 제거": 13, "NavigationRoom 완전 파괴": 9, "OxygenRoom 완전 파괴": 9, "Storage 완전 파괴": 9, "ProtectorRoom 완전 파괴": 8, "CommunityRoom 완전 파괴": 5, "EngineRoom 완전 파괴": 5, "목적지 도착": 4, "NeclearReactor 완전 파괴": 3}}
