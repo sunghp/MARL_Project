@@ -208,6 +208,7 @@ class TheThingWorld:
         self.sab_hidden = 0
         self.repair_total = 0
         self.sab_interrupted = 0
+        self.witness_events = 0
         self.witnessed = {}
         self.alive = list(self.chars)          # allCharacters (사망 시 제거)
         for r in self.rooms:
@@ -527,7 +528,9 @@ class TheThingWorld:
             return False
         if c.room.used_by is not None:
             u = c.room.used_by
+            # 인간팀(선원/함장)만 끊을 수 있음. 사보타주가 "수리"로 동료의 부수기를 끊는 버그 수정
             if (not sabotage and u is not c and u.sabotaging
+                    and self.role[c.idx] != SABOTEUR
                     and self.p("repair_interrupts_sabotage") > 0.5):
                 self._cancel(u)                  # 수리 시작이 부수기를 끊는다
                 self.sab_interrupted += 1
@@ -552,6 +555,8 @@ class TheThingWorld:
             if dist(sab.pos, o.pos) <= vis:
                 n += 1
                 if record:
+                    if sab.idx not in self.witnessed.get(o.idx, ()):
+                        self.witness_events += 1
                     self.witnessed.setdefault(o.idx, set()).add(sab.idx)
                     cap = self.captain
                     if (self.p("share_witness") > 0.5 and cap is not None and cap.active
@@ -717,6 +722,8 @@ class TheThingWorld:
                 "sab_hidden": self.sab_hidden,
                 "repairs": self.repair_total,
                 "sab_interrupted": self.sab_interrupted,
+                "witness_events": self.witness_events,
+                "captain_flags": len(self.witnessed.get(self.captain.idx, ())) if self.captain else 0,
                 "shots": self.shots,
                 "shots_hit": self.shots_hit,
                 "avg_health": round(self.avg_health, 1),

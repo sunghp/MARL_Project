@@ -114,7 +114,9 @@ public class InteractionPoint : MonoBehaviour
     // isRepair: 수리 시도. repairInterruptsSabotage가 켜져 있으면 부수는 중인 NPC를 끊고 자리를 차지한다.
     public bool TryStartInteraction(GameObject user, bool isRepair)
     {
-        if (isBeingUsed && isRepair && currentUser != null && currentUser != user &&
+        // 인간팀(선원/함장)만 끊을 수 있음 (사보타주가 수리로 동료의 부수기를 끊지 못하게)
+        bool userIsHumanTeam = RoleManager.Instance == null || !RoleManager.Instance.IsSaboteur(user);
+        if (isBeingUsed && isRepair && userIsHumanTeam && currentUser != null && currentUser != user &&
             GameManager.Instance != null && GameManager.Instance.repairInterruptsSabotage)
         {
             NPCController saboteurCtrl = currentUser.GetComponent<NPCController>();
