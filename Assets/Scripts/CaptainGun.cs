@@ -342,6 +342,13 @@ public class CaptainGun : MonoBehaviour
         // 행동 지표: 사격 기록
         if (GameManager.Instance != null) GameManager.Instance.RecordShot(wasSaboteur);
 
+        // 함장 명중 보상 (셰이핑)
+        if (wasSaboteur)
+        {
+            NPCAgent shooterAgent = GetComponent<NPCAgent>();
+            if (shooterAgent != null) shooterAgent.OnCaptainHit();
+        }
+
         PlayerController pc = target.GetComponent<PlayerController>();
         NPCController npc = target.GetComponent<NPCController>();
         if (pc != null) pc.Die();

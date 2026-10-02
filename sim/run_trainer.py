@@ -24,6 +24,8 @@ ap.add_argument("--eval-interval", type=int, default=None)
 ap.add_argument("--eval-episodes", type=int, default=None)
 ap.add_argument("--param", action="append", default=[],
                 help="밸런스 파라미터 덮어쓰기 key=value (environment_parameters), 여러 번 지정 가능")
+ap.add_argument("--curriculum", default=None,
+                help="규칙봇 커리큘럼 bot_team:start:end:decay_steps (예: 1:1.0:0.3:500000)")
 args = ap.parse_args()
 
 os.makedirs(os.path.join(args.out, "config"), exist_ok=True)
@@ -61,6 +63,10 @@ if args.eval_interval:
     cfg["eval_interval"] = args.eval_interval
 if args.eval_episodes:
     cfg["eval_episodes"] = args.eval_episodes
+if args.curriculum:
+    team, start, end, decay = args.curriculum.split(":")
+    cfg["bot_curriculum"] = {"bot_team": int(team), "start": float(start), "end": float(end),
+                             "decay_steps": int(decay)}
 
 trainer = mappo_trainer.MAPPOTrainer(cfg)
 trainer.train()

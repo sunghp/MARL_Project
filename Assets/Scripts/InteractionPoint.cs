@@ -124,6 +124,8 @@ public class InteractionPoint : MonoBehaviour
             {
                 saboteurCtrl.CancelCurrentInteraction();   // 방 점유도 해제됨
                 GameManager.Instance.RecordSabotageInterrupted();
+                NPCAgent interrupter = user.GetComponent<NPCAgent>();
+                if (interrupter != null) interrupter.OnInterruptSabotage();
             }
         }
 
@@ -153,6 +155,7 @@ public class InteractionPoint : MonoBehaviour
     public float GetCurrentHealth() => currentHealth;
     public float GetHealthPercent() => currentHealth / maxHealth;
     public bool IsBeingUsed() => isBeingUsed;
+    public bool IsAlerted() => hasAlerted;
     public GameObject GetCurrentUser() => currentUser;
     public string GetRoomName() => roomName;
 

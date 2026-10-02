@@ -76,6 +76,13 @@ DEFAULT_PARAMS = {
     "shoot_requires_evidence": 0.0,    # 1: 함장은 목격 플래그(직접 목격/신고)가 있는 대상만 쏠 수 있음
     "captain_bullets": 2.0,
     "shoot_range": -1.0,               # 사격 사거리: -1 = 시야(vision_range), 0 = 무제한(소집 후 처형), >0 = 그 거리
+    # 인간팀 보상 셰이핑 (기본 0 = 없음)
+    "reward_alert_approach": 0.0,      # 알림 방까지 거리가 1 줄 때마다 보상 (잠재 기반)
+    "reward_interrupt": float(os.environ.get("SIM_INTERRUPT_BONUS", "0")),  # 부수기를 끊은 인간팀
+    "reward_witness": 0.0,             # 사보타주를 처음 목격한 인간팀 (사보타주당 1회)
+    "reward_captain_hit": 0.0,         # 함장이 사보타주를 맞힘
+    # 학습 상대 규칙봇: 0 = 없음, 1 = 사보타주 팀을 규칙봇으로, 2 = 인간팀을 규칙봇으로 (평가와 별개)
+    "bot_team": 0.0,
     "eval_mode": 0.0,
     "frozen_team": 0.0,
 }
@@ -93,8 +100,7 @@ HUMAN, SABOTEUR, CAPTAIN = 0, 1, 2
 # 실험용 변형 (기본값 = 현재 Unity 코드와 동일)
 #   SIM_COMMIT_MOVE=1 : 방으로 이동 중에는 새 방 선택을 무시 (도착해야 다음 이동 명령 반영)
 COMMIT_MOVE = os.environ.get("SIM_COMMIT_MOVE", "0") == "1"
-#   SIM_INTERRUPT_BONUS=x : 부수기를 끊은 인간팀 에이전트에게 보상 x (기본 0)
-INTERRUPT_BONUS = float(os.environ.get("SIM_INTERRUPT_BONUS", "0"))
+#   SIM_INTERRUPT_BONUS=x : reward_interrupt 기본값 (이전 실험 E 재현용)
 
 
 class Room:
@@ -124,6 +130,7 @@ class AgentState:
         self.request_decision = False
         self.request_action = False
         self.prev_avg_health = 100.0
+        self.prev_alert = None           # (방 번호, 거리) — 알림 방 접근 셰이핑용
 
 
 class Char:
@@ -185,6 +192,7 @@ class TheThingWorld:
                 self.params[k] = float(v)
         self.eval_mode = self.params["eval_mode"] > 0.5
         self.frozen_team = int(self.params["frozen_team"])
+        self.bot_team = int(self.params["bot_team"])
 
     # ------------------------------------------------------------------
     # 게임 초기화 / 리셋 (GameManager.InitializeGame / ResetGame)
@@ -192,6 +200,7 @@ class TheThingWorld:
     def _init_game(self):
         self.eval_mode = False
         self.frozen_team = 0
+        self.bot_team = 0
         self._reset_state(load_params=False)
 
     def _reset_state(self, load_params=True):
@@ -246,15 +255,19 @@ class TheThingWorld:
         # ApplyControlModes
         for c in self.chars:
             rule = False
+            is_sab = self.role[c.idx] == SABOTEUR
             if self.eval_mode and self.frozen_team != 0:
-                is_sab = self.role[c.idx] == SABOTEUR
                 # 1=사보타주 봇, 2=인간팀 봇, 3=전원 봇(시뮬레이터 분석 전용)
                 rule = True if self.frozen_team == 3 else (is_sab if self.frozen_team == 1 else (not is_sab))
+            elif self.bot_team in (1, 2):
+                # 학습 커리큘럼: 한 팀을 규칙봇 상대로
+                rule = is_sab if self.bot_team == 1 else (not is_sab)
             c.use_ml = not rule
         self.game_index += 1
         self.game_start_tick = self.total_ticks
         self.game_eval_mode = self.eval_mode
         self.game_frozen = self.frozen_team
+        self.game_bot_team = self.bot_team if not self.eval_mode else 0
 
     # ------------------------------------------------------------------
     # ML-Agents Agent 수명주기
@@ -273,6 +286,7 @@ class TheThingWorld:
 
     def _on_episode_begin(self, c):
         c.agent.prev_avg_health = self.avg_health
+        c.agent.prev_alert = None
 
     def _notify_done(self, c, disabled):
         a = c.agent
@@ -443,6 +457,18 @@ class TheThingWorld:
         delta = self.avg_health - a.prev_avg_health
         a.reward += (-delta if role == SABOTEUR else delta) * HEALTH_SCALE
         a.prev_avg_health = self.avg_health
+        # 알림 방 접근 셰이핑 (인간팀): 가장 가까운 알림 방까지 거리가 줄어든 만큼 보상
+        k = self.p("reward_alert_approach")
+        if k and role != SABOTEUR:
+            alerted = [r for r in self.rooms if r.alerted]
+            if alerted:
+                r = min(alerted, key=lambda r: dist(c.pos, r.pos))
+                d = dist(c.pos, r.pos)
+                if a.prev_alert is not None and a.prev_alert[0] == r.idx:
+                    a.reward += k * (a.prev_alert[1] - d)
+                a.prev_alert = (r.idx, d)
+            else:
+                a.prev_alert = None
 
     def _try_shoot(self, c, slot):
         if c.bullets <= 0 or self.timer < self.p("shoot_grace_time"):
@@ -473,6 +499,8 @@ class TheThingWorld:
         self.shots += 1
         if was_sab:
             self.shots_hit += 1
+            if shooter.use_ml:
+                shooter.agent.reward += self.p("reward_captain_hit")
         self._die(t)
         hc, sc = self.alive_human_count(), len(self.saboteurs)
         if was_sab:
@@ -534,8 +562,8 @@ class TheThingWorld:
                     and self.p("repair_interrupts_sabotage") > 0.5):
                 self._cancel(u)                  # 수리 시작이 부수기를 끊는다
                 self.sab_interrupted += 1
-                if INTERRUPT_BONUS and c.use_ml and self.role[c.idx] != SABOTEUR:
-                    c.agent.reward += INTERRUPT_BONUS
+                if c.use_ml:
+                    c.agent.reward += self.p("reward_interrupt")
             else:
                 return False
         c.room.used_by = c
@@ -557,6 +585,8 @@ class TheThingWorld:
                 if record:
                     if sab.idx not in self.witnessed.get(o.idx, ()):
                         self.witness_events += 1
+                        if o.use_ml:
+                            o.agent.reward += self.p("reward_witness")
                     self.witnessed.setdefault(o.idx, set()).add(sab.idx)
                     cap = self.captain
                     if (self.p("share_witness") > 0.5 and cap is not None and cap.active
@@ -704,6 +734,7 @@ class TheThingWorld:
         self._stat("behavior/sabotage_count", self.sab_total)
         self._stat("behavior/repair_count", self.repair_total)
         self._stat("outcome/human_win", 1.0 if human_win else 0.0)
+        self._stat("train/bot_team", float(self.game_bot_team))
         if self.eval_mode and self.frozen_team == 2:
             self._stat("eval/saboteur_vs_bot_win", 0.0 if human_win else 1.0)
         elif self.eval_mode and self.frozen_team == 1:
@@ -718,6 +749,7 @@ class TheThingWorld:
                 "duration": round(self.timer, 2),
                 "eval_mode": int(self.game_eval_mode),
                 "frozen_team": self.game_frozen,
+                "bot_team": self.game_bot_team,
                 "sab_total": self.sab_total,
                 "sab_hidden": self.sab_hidden,
                 "repairs": self.repair_total,

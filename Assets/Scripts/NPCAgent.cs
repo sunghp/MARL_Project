@@ -38,6 +38,8 @@ public class NPCAgent : Agent
 
     // 내부 상태
     private float previousAverageHealth;
+    private int prevAlertRoom = -1;       // 알림 방 접근 셰이핑: 직전에 가장 가까웠던 알림 방
+    private float prevAlertDist = 0f;
     private bool isSaboteur;
     private bool isCaptain;
     private InteractionPoint[] allRooms;
@@ -80,6 +82,7 @@ public class NPCAgent : Agent
 
         if (SystemHealth.Instance != null)
             previousAverageHealth = SystemHealth.Instance.GetAverageHealth();
+        prevAlertRoom = -1;
     }
 
     // ===================================================================
@@ -304,6 +307,52 @@ public class NPCAgent : Agent
             AddReward(healthDelta * healthChangeRewardScale);
 
         previousAverageHealth = currentHealth;
+
+        // 알림 방 접근 셰이핑 (인간팀): 가장 가까운 알림 방까지 거리가 줄어든 만큼 보상
+        float k = gameManager != null ? gameManager.rewardAlertApproach : 0f;
+        if (k != 0f && !isSaboteur)
+        {
+            int nearest = -1;
+            float nearestDist = float.MaxValue;
+            for (int i = 0; i < allRooms.Length; i++)
+            {
+                if (allRooms[i] == null || !allRooms[i].IsAlerted()) continue;
+                float d = Vector3.Distance(transform.position, allRooms[i].transform.position);
+                if (d < nearestDist) { nearestDist = d; nearest = i; }
+            }
+            if (nearest >= 0)
+            {
+                if (nearest == prevAlertRoom)
+                    AddReward(k * (prevAlertDist - nearestDist));
+                prevAlertRoom = nearest;
+                prevAlertDist = nearestDist;
+            }
+            else
+            {
+                prevAlertRoom = -1;
+            }
+        }
+    }
+
+    // ===== 셰이핑 이벤트 (GameManager/InteractionPoint/CaptainGun에서 호출) =====
+    bool ControlledByPolicy() => npcController != null && npcController.IsUsingML();
+
+    public void OnWitnessSabotage()
+    {
+        if (!isSaboteur && ControlledByPolicy() && gameManager != null)
+            AddReward(gameManager.rewardWitness);
+    }
+
+    public void OnInterruptSabotage()
+    {
+        if (!isSaboteur && ControlledByPolicy() && gameManager != null)
+            AddReward(gameManager.rewardInterrupt);
+    }
+
+    public void OnCaptainHit()
+    {
+        if (isCaptain && ControlledByPolicy() && gameManager != null)
+            AddReward(gameManager.rewardCaptainHit);
     }
 
     public void OnSabotageComplete(bool wasHidden)

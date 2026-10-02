@@ -85,6 +85,12 @@ CONFIG = {
     # === 고정상대 평가 ===
     "eval_interval": 100000,     # N 스텝마다 평가 (10만)
     "eval_episodes": 30,          # 각 매치업(사보타주/인간)당 평가 에피소드 수
+
+    # === 커리큘럼: 학습 게임 일부를 규칙봇 상대로 ===
+    # None이면 끔. bot_team 1 = 사보타주 팀을 규칙봇으로(인간팀이 봇 상대로 학습), 2 = 인간팀을 규칙봇으로.
+    # 규칙봇 쪽 에이전트의 데이터는 학습에서 제외한다. 봇 게임 비율은 start → end로 decay_steps 동안 선형 감소.
+    # 켜져 있으면 에피소드 중간 업데이트는 하지 않는다(그 게임이 봇 게임인지는 종료 시점에 Unity가 알려줌).
+    "bot_curriculum": None,       # 예: {"bot_team": 1, "start": 1.0, "end": 0.3, "decay_steps": 500_000}
 }
 
 
@@ -655,6 +661,25 @@ class MAPPOTrainer:
         print(f"[불러오기] {path} (에피소드: {self.episode_count})")
 
     # ============================================================
+    # 커리큘럼
+    # ============================================================
+
+    def bot_game_prob(self):
+        cur = self.config.get("bot_curriculum")
+        if not cur:
+            return 0.0
+        frac = min(1.0, self.total_steps / max(1, cur["decay_steps"]))
+        return cur["start"] + (cur["end"] - cur["start"]) * frac
+
+    def schedule_next_game(self, param_channel):
+        """다음 게임을 규칙봇 상대로 할지 정해서 Unity에 전달 (Unity는 다음 리셋 때 읽음)"""
+        cur = self.config.get("bot_curriculum")
+        if not cur:
+            return
+        team = cur["bot_team"] if np.random.random() < self.bot_game_prob() else 0
+        param_channel.set_float_parameter("bot_team", float(team))
+
+    # ============================================================
     # 메인 학습 루프
     # ============================================================
 
@@ -699,6 +724,7 @@ class MAPPOTrainer:
             param_channel.set_float_parameter(key, float(val))
             print(f"  - {key} = {float(val)}")
 
+        self.schedule_next_game(param_channel)
         env.reset()
 
         # Behavior 이름 확인
@@ -731,6 +757,7 @@ class MAPPOTrainer:
                     self.eval_frozen = 2          # 인간 고정 → 학습된 사보타주 측정부터
                     self.eval_ep_count = 0
                     param_channel.set_float_parameter("eval_mode", 1.0)
+                    param_channel.set_float_parameter("bot_team", 0.0)
                     param_channel.set_float_parameter("frozen_team", 2.0)
                     print(f"[평가 시작] step={self.total_steps} | 사보타주 측정 (인간 규칙봇 고정)")
 
@@ -811,6 +838,15 @@ class MAPPOTrainer:
                         print("[건너뜀] 평가 모드로 진행된 에피소드 → 학습 데이터에서 제외")
                     elif not self.in_eval:
                         # ===== 학습 에피소드: 업데이트 + 학습 곡선 기록 =====
+                        # 커리큘럼 봇 게임이면 규칙봇이 조종한 팀의 데이터는 버린다 (행동이 정책에서 나오지 않음)
+                        bot_stat = env_stats.get("train/bot_team")
+                        bot_team = int(round(bot_stat[-1][0])) if bot_stat else 0
+                        bot_side = {1: "saboteur_team", 2: "human_team"}.get(bot_team)
+                        if bot_side:
+                            for aid in [a for a in self.buffers if self.agent_teams.get(a) == bot_side]:
+                                del self.buffers[aid]
+                                self.episode_rewards.pop(aid, None)
+
                         has_data = any(len(buf) > 0 for buf in self.buffers.values())
                         if has_data:
                             self.update()
@@ -838,9 +874,10 @@ class MAPPOTrainer:
                             )
 
                         if human_won is not None:
-                            self.writer.add_scalar(
-                                "outcome/saboteur_win_rate", 0.0 if human_won else 1.0, self.episode_count
-                            )
+                            tag = "outcome/saboteur_win_rate" + ("_vs_bot" if bot_side else "")
+                            self.writer.add_scalar(tag, 0.0 if human_won else 1.0, self.episode_count)
+                        if self.config.get("bot_curriculum"):
+                            self.writer.add_scalar("curriculum/bot_game_prob", self.bot_game_prob(), self.episode_count)
 
                         # 행동 지표 + Unity stats (학습 중엔 eval/* 안 옴)
                         for stat_name, entries in env_stats.items():
@@ -883,6 +920,9 @@ class MAPPOTrainer:
                                 param_channel.set_float_parameter("eval_mode", 0.0)
                                 self.next_eval_step = self.total_steps + config["eval_interval"]
                                 print(f"[평가 완료] step={self.total_steps} 학습 재개")
+
+                    if not self.in_eval:
+                        self.schedule_next_game(param_channel)
 
                     self.writer.flush()
 
@@ -984,7 +1024,7 @@ class MAPPOTrainer:
                 # 살아있는 에이전트 기준으로만 판단 (사망 에이전트의 짧은 버퍼가 블로킹하지 않도록)
                 # 평가 중에는 학습하지 않음
                 living_agents = set(self.agent_roles.keys()) - terminated_agents
-                if not self.in_eval and living_agents:
+                if not self.in_eval and living_agents and not config.get("bot_curriculum"):
                     living_buf_lens = [
                         len(self.buffers[aid]) for aid in living_agents
                         if len(self.buffers[aid]) > 0

@@ -63,6 +63,20 @@ public class GameManager : MonoBehaviour
     [Tooltip("NPC 함장 사격 사거리: -1 = 시야(visionRange), 0 = 무제한(소집 후 처형처럼 지목), >0 = 그 거리")]
     public float shootRange = 25f;   // sim/results/captain_rules (I)
 
+    [Header("=== 인간팀 보상 셰이핑 (env param으로 덮어씀) ===")]
+    [Tooltip("알림 방까지 거리가 1 줄어들 때마다 인간팀 보상")]
+    public float rewardAlertApproach = 0f;
+    [Tooltip("부수기를 수리로 끊은 인간팀 보상")]
+    public float rewardInterrupt = 0f;
+    [Tooltip("사보타주를 처음 목격한 인간팀 보상 (사보타주당 1회)")]
+    public float rewardWitness = 0f;
+    [Tooltip("함장이 사보타주를 맞혔을 때 보상")]
+    public float rewardCaptainHit = 0f;
+
+    [Header("=== 학습 커리큘럼 (env param bot_team) ===")]
+    [Tooltip("평가와 별개로 학습 게임에서 규칙봇으로 둘 팀: 0=없음, 1=사보타주, 2=인간팀")]
+    public int botTeam = 0;
+
     [Header("=== 상호작용 파라미터 ===")]
     [Tooltip("부수기 시간 (초)")]
     public float sabotageTime = 3f;
@@ -202,6 +216,8 @@ public class GameManager : MonoBehaviour
         // 승패 결과: 트레이너가 승률 집계 + 죽은 에이전트(재활성화 시 새 episode id라 보상을 못 받음)의
         // 게임 종료 보상 귀속에 사용
         recorder.Add("outcome/human_win", humanWin ? 1f : 0f);
+        // 이 게임이 커리큘럼 봇 게임이었는지 (트레이너가 봇 쪽 데이터를 버리는 데 사용)
+        recorder.Add("train/bot_team", evalMode ? 0f : (float)botTeam);
 
         // 고정상대 평가 결과 (트레이너가 이 키로 평가 에피소드 수를 센다)
         // 이 에피소드가 실제로 돌았던 모드 기준 (ResetGame에서 파라미터를 새로 읽기 전)
@@ -466,7 +482,12 @@ public class GameManager : MonoBehaviour
                         seen = new HashSet<GameObject>();
                         witnessedSaboteurs[ch] = seen;
                     }
-                    seen.Add(saboteur);
+                    if (seen.Add(saboteur))
+                    {
+                        // 처음 목격 → 목격자 보상 (셰이핑)
+                        NPCAgent witnessAgent = ch.GetComponent<NPCAgent>();
+                        if (witnessAgent != null) witnessAgent.OnWitnessSabotage();
+                    }
 
                     // 목격 공유: 함장도 이 사보타주를 목격한 것으로 기록
                     if (shareWitness && captain != null && captain != ch && captain.activeInHierarchy)
@@ -527,6 +548,13 @@ public class GameManager : MonoBehaviour
                 bool isSab = RoleManager.Instance.IsSaboteur(ch);
                 if (frozenTeam == 1) ruleBot = isSab;        // 사보타주 팀을 규칙봇으로
                 else if (frozenTeam == 2) ruleBot = !isSab;  // 인간팀(인간+함장)을 규칙봇으로
+            }
+            else if (!evalMode && botTeam != 0 && RoleManager.Instance != null)
+            {
+                // 학습 커리큘럼: 한 팀을 규칙봇 상대로 (트레이너가 그 팀 데이터는 학습에서 제외)
+                bool isSab = RoleManager.Instance.IsSaboteur(ch);
+                if (botTeam == 1) ruleBot = isSab;
+                else if (botTeam == 2) ruleBot = !isSab;
             }
             ctrl.SetControlMode(!ruleBot);   // ruleBot이면 useML=false
         }
@@ -701,6 +729,11 @@ public class GameManager : MonoBehaviour
         shootRequiresEvidence = envParams.GetWithDefault("shoot_requires_evidence", shootRequiresEvidence ? 1f : 0f) > 0.5f;
         shootRange          = envParams.GetWithDefault("shoot_range", shootRange);
         captainBullets      = (int)envParams.GetWithDefault("captain_bullets", captainBullets);
+        rewardAlertApproach = envParams.GetWithDefault("reward_alert_approach", rewardAlertApproach);
+        rewardInterrupt     = envParams.GetWithDefault("reward_interrupt", rewardInterrupt);
+        rewardWitness       = envParams.GetWithDefault("reward_witness", rewardWitness);
+        rewardCaptainHit    = envParams.GetWithDefault("reward_captain_hit", rewardCaptainHit);
+        botTeam             = (int)envParams.GetWithDefault("bot_team", botTeam);
 
         // 평가 모드 파라미터 (env param이 있으면 Inspector 값 덮어씀)
         evalMode   = envParams.GetWithDefault("eval_mode", evalMode ? 1f : 0f) > 0.5f;
