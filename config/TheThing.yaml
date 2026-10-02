@@ -68,11 +68,11 @@ environment_parameters:
   shoot_range: 25.0                 # 사격 사거리 (-1 = 시야, 0 = 무제한)
   captain_bullets: 2.0
 
-  # 인간팀 보상 셰이핑 (shaping_curriculum: 인간팀 학습에 결정적)
-  reward_alert_approach: 0.01       # 알림 방까지 거리 1 줄 때마다
-  reward_interrupt: 1.0             # 부수기를 수리로 끊음
-  reward_witness: 0.3               # 사보타주 처음 목격 (사보타주당 1회)
-  reward_captain_hit: 2.0           # 함장 명중
+  # 인간팀 보상 셰이핑: balance_v4 규칙에서는 필요 없음 → 0 (이전 밸런스에서 쓰던 값: 0.01 / 1.0 / 0.3 / 2.0)
+  reward_alert_approach: 0.0        # 알림 방까지 거리 1 줄 때마다
+  reward_interrupt: 0.0             # 부수기를 수리로 끊음
+  reward_witness: 0.0               # 사보타주 처음 목격 (사보타주당 1회)
+  reward_captain_hit: 0.0           # 함장 명중
 
   # 학습 커리큘럼 (규칙봇 상대 게임). 트레이너 CONFIG의 bot_curriculum이 매 게임 설정함. 단독 효과 없음 → 기본 꺼짐
   bot_team: 0.0
