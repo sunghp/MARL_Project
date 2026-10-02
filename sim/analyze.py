@@ -25,7 +25,7 @@ for f in sorted(glob.glob("/usr/share/fonts/**/NanumGothic.ttf", recursive=True)
     break
 plt.rcParams["axes.unicode_minus"] = False
 
-COLORS = {"A": "#d1495b", "B": "#2e86ab", "C": "#3b8b3b", "D": "#8f5fbf", "E": "#e08a00", "F": "#1f77b4", "G": "#2ca02c", "H": "#d62728", "I": "#9467bd"}
+COLORS = {"A": "#d1495b", "B": "#2e86ab", "C": "#3b8b3b", "D": "#8f5fbf", "E": "#e08a00", "F": "#1f77b4", "G": "#2ca02c", "H": "#d62728", "I": "#9467bd", "J": "#e377c2", "K": "#17becf", "L": "#bcbd22"}
 REASON_GROUPS = [
     ("목적지 도착", lambda r: r == "목적지 도착"),
     ("사보타주 전원 처형", lambda r: r == "모든 사보타주 제거"),
@@ -64,7 +64,13 @@ def rolling(x, w):
 
 
 def train_games(games):
-    return [g for g in games if not g["eval_mode"]]
+    """학습 게임 중 학습 정책끼리 붙은 게임 (평가, 커리큘럼 봇 게임 제외)"""
+    return [g for g in games if not g["eval_mode"] and not g.get("bot_team", 0)]
+
+
+def bot_train_games(games):
+    """커리큘럼 봇 게임 (학습 중 한 팀이 규칙봇)"""
+    return [g for g in games if not g["eval_mode"] and g.get("bot_team", 0)]
 
 
 def eval_blocks(games):
@@ -88,14 +94,14 @@ def eval_blocks(games):
     return out
 
 
-def train_step_axis(games):
-    """평가에 쓴 decision을 빼고 '학습 스텝' 축으로 변환"""
+def train_step_axis(games, bot=False):
+    """평가에 쓴 decision을 빼고 '학습 스텝' 축으로 변환 (bot=True면 봇 게임 위치, 아니면 정책끼리 게임 위치)"""
     xs, offset, prev = [], 0, 0
     for g in games:
         if g["eval_mode"]:
             offset += g["agent_decisions"] - prev
         prev = g["agent_decisions"]
-        if not g["eval_mode"]:
+        if not g["eval_mode"] and bool(g.get("bot_team", 0)) == bot:
             xs.append(g["agent_decisions"] - offset)
     return np.array(xs)
 
@@ -122,6 +128,7 @@ def summarize_run(games, tb):
             "interrupts_per_game": round(float(np.mean([g.get("sab_interrupted", 0) for g in gs])), 2),
             "shots_per_game": round(float(np.mean([g["shots"] for g in gs])), 2),
             "shot_accuracy": round(float(np.sum([g["shots_hit"] for g in gs]) / max(1, np.sum([g["shots"] for g in gs]))), 3),
+            "witness_per_game": round(float(np.mean([g.get("witness_events", 0) for g in gs])), 2),
             "shot_in_first_5s": round(float(np.mean([g["duration"] <= 5.0 and g["shots"] > 0 for g in gs])), 3),
             "reasons": {k: round(v / len(gs), 3) for k, v in reasons.most_common()},
         }
@@ -131,8 +138,12 @@ def summarize_run(games, tb):
         v = [y for _, y in sorted(tb.get(tag, []))]
         if v:
             ent[tag.split("_")[-1]] = {"start": round(v[0], 3), "end": round(float(np.mean(v[-20:])), 3)}
+    bg = bot_train_games(games)
     return {
         "train_games": n,
+        "bot_train_games": len(bg),
+        "bot_games_human_win_last20pct": (round(float(np.mean([g["human_win"] for g in bg[-max(1, len(bg) // 5):]])), 3)
+                                          if bg else None),
         "trainer_counted_episodes": int(max([s for s, _ in tb.get("episode/total_reward", [(0, 0)])])),
         "first_20pct": stats(first),
         "last_20pct": stats(last),
@@ -177,6 +188,10 @@ def main():
             lab = name if i == 0 else None
             ls = "-" if i == 0 else "--"
             ax[0].plot(x, rolling([g["human_win"] for g in tg], W), color=col, ls=ls, label=lab)
+            bg = bot_train_games(games)
+            if bg:
+                ax[0].plot(train_step_axis(games, bot=True) / 1e6, rolling([g["human_win"] for g in bg], W),
+                           color=col, ls=":", alpha=0.6, label=f"{name} (봇 사보타주 상대)" if i == 0 else None)
             ax[1].plot(x, rolling([g["duration"] for g in tg], W), color=col, ls=ls, label=lab)
             ax[2].plot(x, rolling([g["shots"] for g in tg], W), color=col, ls=ls, label=lab)
             ax[3].plot(x, rolling([g["duration"] <= 5.0 and g["shots"] > 0 for g in tg], W), color=col, ls=ls, label=lab)
