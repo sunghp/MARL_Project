@@ -35,7 +35,7 @@ environment_parameters:
   ship_speed: 10.0
   ship_stop_threshold: 50.0
   sabotage_win_threshold: 30.0
-  sabotage_damage: 10.0
+  sabotage_damage: 7.0               # 10 → 7 (balance_v4)
   repair_amount: 15.0
   sabotage_time: 3.0
   repair_time: 5.0
@@ -63,3 +63,9 @@ environment_parameters:
 
   # 학습 커리큘럼 (규칙봇 상대 게임). 트레이너 CONFIG의 bot_curriculum이 매 게임 설정함. 단독 효과 없음 → 기본 꺼짐
   bot_team: 0.0
+
+  # 인간팀 학습용 규칙 (balance_v4: 셰이핑 없이도 인간팀이 학습)
+  commit_move: 1.0                  # 이동 중엔 새 방 선택 무시
+  auto_repair: 1.0                  # 인간팀은 손상된 방 근처에서 자동 수리/끊기
+  spawn_spread: 1.0                 # 시작 위치를 방 근처로 분산
+  ship_speed_by_health: 1.0         # 함선 속도 ∝ 평균 안정도

@@ -73,6 +73,16 @@ public class GameManager : MonoBehaviour
     [Tooltip("함장이 사보타주를 맞혔을 때 보상")]
     public float rewardCaptainHit = 0f;
 
+    [Header("=== 인간팀 학습용 규칙 (sim/results/balance_v4) ===")]
+    [Tooltip("ML 에이전트는 방으로 이동 중엔 새 방 선택을 무시 (도착해야 다음 이동 명령 반영)")]
+    public bool commitMove = true;
+    [Tooltip("인간팀 ML 에이전트는 손상된 방 근처에 가면 행동 선택 없이 자동으로 수리(부수기 끊기 포함)")]
+    public bool autoRepair = true;
+    [Tooltip("에피소드 시작 위치를 카페 대신 서로 다른 방 근처로 분산")]
+    public bool spawnSpread = true;
+    [Tooltip("함선 속도 = shipSpeed × 평균 안정도/100 (수리가 도착 시간에 바로 반영)")]
+    public bool shipSpeedByHealth = true;
+
     [Header("=== 학습 커리큘럼 (env param bot_team) ===")]
     [Tooltip("평가와 별개로 학습 게임에서 규칙봇으로 둘 팀: 0=없음, 1=사보타주, 2=인간팀")]
     public int botTeam = 0;
@@ -364,6 +374,8 @@ public class GameManager : MonoBehaviour
     void UpdateShipProgress()
     {
         float currentSpeed = shipStopped ? stoppedSpeed : shipSpeed;
+        if (shipSpeedByHealth && !shipStopped && SystemHealth.Instance != null)
+            currentSpeed *= SystemHealth.Instance.GetAverageHealth() / 100f;
         currentDistance += currentSpeed * Time.deltaTime;
     }
 
@@ -641,16 +653,32 @@ public class GameManager : MonoBehaviour
         }
         
         // 4. 모든 캐릭터 활성화 및 위치 초기화
+        // spawnSpread: 방 목록을 섞어 캐릭터마다 서로 다른 방 근처에 배치
+        List<InteractionPoint> spawnRooms = new List<InteractionPoint>(allRooms);
+        for (int i = spawnRooms.Count - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            var tmp = spawnRooms[i]; spawnRooms[i] = spawnRooms[j]; spawnRooms[j] = tmp;
+        }
+        int spawnIndex = 0;
+
         foreach (var character in allCharacters)
         {
             if (character != null)
             {
                 character.SetActive(true);
                 
-                // 카페 위치로 이동 (랜덤 오프셋)
+                // 카페 위치로 이동 (랜덤 오프셋), spawnSpread면 방 근처
                 Vector3 spawnPos = cafeSpawnPoint != null ? 
                     cafeSpawnPoint.position + new Vector3(Random.Range(-2f, 2f), 0, Random.Range(-2f, 2f)) :
                     Vector3.zero;
+                if (spawnSpread && spawnRooms.Count > 0)
+                {
+                    Vector3 roomPos = spawnRooms[spawnIndex++ % spawnRooms.Count].transform.position;
+                    Vector3 candidate = roomPos + new Vector3(Random.Range(-2f, 2f), 0, Random.Range(-2f, 2f));
+                    if (UnityEngine.AI.NavMesh.SamplePosition(candidate, out var navHit, 3f, UnityEngine.AI.NavMesh.AllAreas))
+                        spawnPos = navHit.position;
+                }
                 
                 character.transform.position = spawnPos;
                 
@@ -734,6 +762,10 @@ public class GameManager : MonoBehaviour
         rewardWitness       = envParams.GetWithDefault("reward_witness", rewardWitness);
         rewardCaptainHit    = envParams.GetWithDefault("reward_captain_hit", rewardCaptainHit);
         botTeam             = (int)envParams.GetWithDefault("bot_team", botTeam);
+        commitMove          = envParams.GetWithDefault("commit_move", commitMove ? 1f : 0f) > 0.5f;
+        autoRepair          = envParams.GetWithDefault("auto_repair", autoRepair ? 1f : 0f) > 0.5f;
+        spawnSpread         = envParams.GetWithDefault("spawn_spread", spawnSpread ? 1f : 0f) > 0.5f;
+        shipSpeedByHealth   = envParams.GetWithDefault("ship_speed_by_health", shipSpeedByHealth ? 1f : 0f) > 0.5f;
 
         // 평가 모드 파라미터 (env param이 있으면 Inspector 값 덮어씀)
         evalMode   = envParams.GetWithDefault("eval_mode", evalMode ? 1f : 0f) > 0.5f;

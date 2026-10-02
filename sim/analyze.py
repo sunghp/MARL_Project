@@ -25,7 +25,7 @@ for f in sorted(glob.glob("/usr/share/fonts/**/NanumGothic.ttf", recursive=True)
     break
 plt.rcParams["axes.unicode_minus"] = False
 
-COLORS = {"A": "#d1495b", "B": "#2e86ab", "C": "#3b8b3b", "D": "#8f5fbf", "E": "#e08a00", "F": "#1f77b4", "G": "#2ca02c", "H": "#d62728", "I": "#9467bd", "J": "#e377c2", "K": "#17becf", "L": "#bcbd22"}
+COLORS = {"A": "#d1495b", "B": "#2e86ab", "C": "#3b8b3b", "D": "#8f5fbf", "E": "#e08a00", "F": "#1f77b4", "G": "#2ca02c", "H": "#d62728", "I": "#9467bd", "J": "#e377c2", "K": "#17becf", "L": "#bcbd22", "M": "#ff7f0e", "N": "#8c564b"}
 REASON_GROUPS = [
     ("목적지 도착", lambda r: r == "목적지 도착"),
     ("사보타주 전원 처형", lambda r: r == "모든 사보타주 제거"),

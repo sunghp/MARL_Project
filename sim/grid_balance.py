@@ -43,13 +43,26 @@ GRIDS = {
         "sabotage_damage": [10.0, 7.0],
         "ship_speed_by_health": [1.0],
     },
+    # 4차-3: v4 규칙에서 사보타주 쪽 신호 회복 (무작위 사보타주도 가끔 이기게)
+    "v4c": {
+        "total_distance": [1000.0, 1300.0, 1600.0],
+        "sabotage_damage": [7.0, 10.0],
+        "alert_threshold": [60.0, 70.0],
+    },
+    # 4차-4: 사보타주 쪽 행동열 단축 (자동 부수기)
+    "v4d": {
+        "auto_sabotage": [0.0, 1.0],
+        "sabotage_damage": [7.0, 8.5],
+        "total_distance": [1000.0, 1300.0],
+    },
 }
-BASE = {"v2": "v1_chosen", "v3": "v2_chosen", "v4": "v3_chosen", "v4b": "v3_chosen"}
+BASE = {"v2": "v1_chosen", "v3": "v2_chosen", "v4": "v3_chosen", "v4b": "v3_chosen", "v4c": "v4_rules", "v4d": "v4_rules"}
 MATCHUPS = [("camper_vs_bot", 2, "camper"), ("bot_vs_bot", 3, "random"), ("rand_vs_rand", 0, "random"),
             # 무작위 인간팀 vs 방 붙기 사보타주: 학습 전 인간팀도 가끔 이겨야 학습 신호가 생긴다
             ("rand_vs_camper", 0, "camper"),
             # 무작위 사보타주 vs 규칙봇 인간팀: 학습 전 사보타주도 가끔 이겨야 한다
-            ("rand_sab_vs_bot", 2, "random")]
+            ("rand_sab_vs_bot", 2, "random"),
+            ("rand_hum_vs_bot", 1, "random")]
 
 
 def one(args):

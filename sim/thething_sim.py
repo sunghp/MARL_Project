@@ -89,6 +89,7 @@ DEFAULT_PARAMS = {
     "repair_range": 2.0,               # 수리(및 수리로 끊기)를 시작할 수 있는 방과의 거리
     "repeat_damage_decay": 1.0,        # 같은 방을 (수리 없이) 연속으로 부술수록 피해 × decay^n → 방 붙기 약화
     "auto_repair": 0.0,                # 1: 인간팀은 손상된 방 근처(repair_range)에 가면 행동 선택 없이 자동 수리/끊기
+    "auto_sabotage": 0.0,              # 1: 사보타주는 목표 방에 도착하면 자동으로 부수기 (부수는 동안 이동 불가)
     "commit_move": 1.0 if os.environ.get("SIM_COMMIT_MOVE", "0") == "1" else 0.0,  # 1: 방으로 이동 중엔 새 방 선택 무시
     "eval_mode": 0.0,
     "frozen_team": 0.0,
@@ -678,6 +679,10 @@ class TheThingWorld:
                 if near:
                     c.room = min(near, key=lambda r: dist(c.pos, r.pos))
                     self._try_start(c, False)
+            if (self.p("auto_sabotage") > 0.5 and c.use_ml and not c.interacting
+                    and self.role[c.idx] == SABOTEUR
+                    and c.room is not None and self._near(c)):
+                self._try_start(c, True)
             if c.state == "moving" and c.dest is not None:
                 d = c.dest - c.pos
                 remain = math.hypot(d[0], d[1])

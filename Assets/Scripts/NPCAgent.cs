@@ -264,7 +264,9 @@ public class NPCAgent : Agent
 
         // ===== 이동 처리 =====
         // 상호작용 진행 중이면 이동 명령 무시 (중단 방지)
-        if (!npcController.IsInteracting() &&
+        // commitMove: 방으로 이동 중이면 새 방 선택 무시 (무작위 정책도 실제로 방에 도착할 수 있게)
+        bool movingLocked = gameManager.commitMove && npcController.IsMovingToRoom();
+        if (!npcController.IsInteracting() && !movingLocked &&
             roomChoice < allRooms.Length && allRooms[roomChoice] != null)
         {
             npcController.MoveToRoom(allRooms[roomChoice]);

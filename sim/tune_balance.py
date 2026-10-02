@@ -50,6 +50,24 @@ PRESETS = {
         "shoot_range": 25.0,
         "captain_bullets": 2.0,
     },
+    # 4차 규칙(인간팀 학습용): v3 + 이동 확정 + 자동 수리 + 분산 스폰 + 속도∝안정도 + 피해 7
+    "v4_rules": {
+        "room_destroy_loss": 1.0,
+        "alert_threshold": 70.0,
+        "repair_interrupts_sabotage": 1.0,
+        "shoot_grace_time": 10.0,
+        "share_witness": 1.0,
+        "vision_range": 12.0,
+        "shoot_requires_evidence": 1.0,
+        "shoot_range": 25.0,
+        "captain_bullets": 2.0,
+        "commit_move": 1.0,
+        "auto_repair": 1.0,
+        "spawn_spread": 1.0,
+        "repair_range": 2.0,
+        "sabotage_damage": 7.0,
+        "ship_speed_by_health": 1.0,
+    },
     # 방 파괴 승리까지 없애면 사보타주가 100초 안에 평균 안정도를 못 떨어뜨려 전패 (과보정)
     "no_room_destroy": {
         "room_destroy_loss": 0.0,

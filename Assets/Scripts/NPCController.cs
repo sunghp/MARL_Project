@@ -263,6 +263,8 @@ public class NPCController : MonoBehaviour
             }
         }
 
+        TryAutoRepair();
+
         // 상태에 따른 행동
         switch (currentState)
         {
@@ -715,6 +717,42 @@ public class NPCController : MonoBehaviour
     public bool IsDead() => isDead;
     public bool IsInteracting() => isInteracting;
     public NPCState GetCurrentState() => currentState;
+    public bool IsMovingToRoom() => currentState == NPCState.Moving && currentInteractionPoint != null;
+
+    // ===== 자동 수리 (GameManager.autoRepair) =====
+    // 인간팀 ML 에이전트가 손상된 방 근처(interactionRange)에 있으면 행동 선택 없이 수리 시작.
+    // 사보타주가 부수는 중인 방이면 InteractionPoint가 부수기를 끊는다.
+    private InteractionPoint[] cachedRooms;
+
+    void TryAutoRepair()
+    {
+        if (!useMLAgents || isInteracting || isDead) return;
+        if (GameManager.Instance == null || !GameManager.Instance.autoRepair) return;
+        if (RoleManager.Instance == null || RoleManager.Instance.IsSaboteur(gameObject)) return;
+
+        if (cachedRooms == null) cachedRooms = FindObjectsOfType<InteractionPoint>();
+        InteractionPoint best = null;
+        float bestDist = float.MaxValue;
+        foreach (var room in cachedRooms)
+        {
+            if (room == null || room.GetCurrentHealth() >= room.maxHealth) continue;
+            Vector3 a = transform.position, b = room.transform.position;
+            a.y = 0f; b.y = 0f;
+            float d = Vector3.Distance(a, b);
+            if (d > interactionRange || d >= bestDist) continue;
+            GameObject user = room.GetCurrentUser();
+            bool usable = !room.IsBeingUsed() ||
+                          (user != null && user.GetComponent<NPCController>() != null &&
+                           user.GetComponent<NPCController>().isSabotaging);
+            if (!usable) continue;
+            best = room;
+            bestDist = d;
+        }
+        if (best == null) return;
+
+        currentInteractionPoint = best;
+        TryStartRepair();
+    }
 
     /// <summary>
     /// 상호작용 진행률 반환 (0~1). 상호작용 중이 아니면 0.
