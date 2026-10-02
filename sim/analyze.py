@@ -25,7 +25,7 @@ for f in sorted(glob.glob("/usr/share/fonts/**/NanumGothic.ttf", recursive=True)
     break
 plt.rcParams["axes.unicode_minus"] = False
 
-COLORS = {"A": "#d1495b", "B": "#2e86ab", "C": "#3b8b3b", "D": "#8f5fbf"}
+COLORS = {"A": "#d1495b", "B": "#2e86ab", "C": "#3b8b3b", "D": "#8f5fbf", "E": "#e08a00"}
 REASON_GROUPS = [
     ("목적지 도착", lambda r: r == "목적지 도착"),
     ("사보타주 전원 처형", lambda r: r == "모든 사보타주 제거"),
@@ -119,6 +119,7 @@ def summarize_run(games, tb):
             "sabotage_per_game": round(float(np.mean([g["sab_total"] for g in gs])), 2),
             "hidden_rate": round(float(np.sum([g["sab_hidden"] for g in gs]) / max(1, np.sum([g["sab_total"] for g in gs]))), 3),
             "repairs_per_game": round(float(np.mean([g["repairs"] for g in gs])), 2),
+            "interrupts_per_game": round(float(np.mean([g.get("sab_interrupted", 0) for g in gs])), 2),
             "shots_per_game": round(float(np.mean([g["shots"] for g in gs])), 2),
             "shot_accuracy": round(float(np.sum([g["shots_hit"] for g in gs]) / max(1, np.sum([g["shots"] for g in gs]))), 3),
             "shot_in_first_5s": round(float(np.mean([g["duration"] <= 5.0 and g["shots"] > 0 for g in gs])), 3),
