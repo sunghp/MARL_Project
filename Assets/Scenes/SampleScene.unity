@@ -3137,7 +3137,7 @@ MonoBehaviour:
   repairTime: 5
   repairAmount: 15
   moveSpeed: 5
-  visionRange: 10
+  visionRange: 12
   sabotageCount: 2
   humanCount: 3
   captainBullets: 2

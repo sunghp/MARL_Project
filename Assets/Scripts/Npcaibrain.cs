@@ -733,8 +733,10 @@ public class NPCAIBrain : MonoBehaviour
         if (saboteur == gameObject) return;
         
         bool canSeeSaboteur = CanSee(saboteur);
+        // 목격 공유: 다른 인간팀이 봤으면 직접 목격과 같은 취급
+        bool reported = GameManager.Instance.shareWitness && GameManager.Instance.CountWitnesses(saboteur) > 0;
         
-        if (canSeeSaboteur)
+        if (canSeeSaboteur || reported)
         {
             AddSuspicion(saboteur, directSabotageSuspicion);
             Debug.Log($"👁️ [함장 직접 목격!] {saboteur.name}이(가) {roomName}에서 부수는 것을 봤다! (의심 +{directSabotageSuspicion})");

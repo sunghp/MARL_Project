@@ -22,12 +22,21 @@ from thething_sim import SABOTEUR, TheThingWorld, dist  # noqa: E402
 
 PRESETS = {
     "current": {},
-    # 채택: config/TheThing.yaml에 반영된 값
+    # 1차 채택값
     "v1_chosen": {
         "room_destroy_loss": 1.0,
         "alert_threshold": 70.0,
         "repair_interrupts_sabotage": 1.0,
         "shoot_grace_time": 10.0,
+    },
+    # 채택(2차): v1 + 목격 공유 + 시야 12 — config/TheThing.yaml 현재값
+    "v2_chosen": {
+        "room_destroy_loss": 1.0,
+        "alert_threshold": 70.0,
+        "repair_interrupts_sabotage": 1.0,
+        "shoot_grace_time": 10.0,
+        "share_witness": 1.0,
+        "vision_range": 12.0,
     },
     # 방 파괴 승리까지 없애면 사보타주가 100초 안에 평균 안정도를 못 떨어뜨려 전패 (과보정)
     "no_room_destroy": {

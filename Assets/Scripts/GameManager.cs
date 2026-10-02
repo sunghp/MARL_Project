@@ -54,6 +54,9 @@ public class GameManager : MonoBehaviour
     [Tooltip("게임 시작 후 이 시간(초) 동안 함장 사격 불가 (카페에 모인 상태로 무작위 사격 방지)")]
     public float shootGraceTime = 10f;
 
+    [Tooltip("인간팀이 부수기를 목격하면 함장에게 공유(신고) → 함장의 목격 기록에도 추가")]
+    public bool shareWitness = true;
+
     [Header("=== 상호작용 파라미터 ===")]
     [Tooltip("부수기 시간 (초)")]
     public float sabotageTime = 3f;
@@ -72,7 +75,7 @@ public class GameManager : MonoBehaviour
     public float moveSpeed = 5f;
 
     [Tooltip("시야 거리")]
-    public float visionRange = 10f;
+    public float visionRange = 12f;   // 10 → 12 (sim/results/balance_v2)
 
     [Header("=== 역할 파라미터 ===")]
     [Tooltip("사보타주 인원 수")]
@@ -458,6 +461,17 @@ public class GameManager : MonoBehaviour
                         witnessedSaboteurs[ch] = seen;
                     }
                     seen.Add(saboteur);
+
+                    // 목격 공유: 함장도 이 사보타주를 목격한 것으로 기록
+                    if (shareWitness && captain != null && captain != ch && captain.activeInHierarchy)
+                    {
+                        if (!witnessedSaboteurs.TryGetValue(captain, out var capSeen))
+                        {
+                            capSeen = new HashSet<GameObject>();
+                            witnessedSaboteurs[captain] = capSeen;
+                        }
+                        capSeen.Add(saboteur);
+                    }
                 }
             }
         }
@@ -667,6 +681,7 @@ public class GameManager : MonoBehaviour
         roomDestroyLoss     = envParams.GetWithDefault("room_destroy_loss", roomDestroyLoss ? 1f : 0f) > 0.5f;
         repairInterruptsSabotage = envParams.GetWithDefault("repair_interrupts_sabotage", repairInterruptsSabotage ? 1f : 0f) > 0.5f;
         shootGraceTime      = envParams.GetWithDefault("shoot_grace_time", shootGraceTime);
+        shareWitness        = envParams.GetWithDefault("share_witness", shareWitness ? 1f : 0f) > 0.5f;
 
         // 평가 모드 파라미터 (env param이 있으면 Inspector 값 덮어씀)
         evalMode   = envParams.GetWithDefault("eval_mode", evalMode ? 1f : 0f) > 0.5f;
