@@ -100,13 +100,16 @@ public class SystemHealth : MonoBehaviour
         if (GameManager.Instance.IsGameOver()) return;
         if (GameManager.Instance.currentState != GameManager.GameState.Playing) return;
 
-        // 사보타주 승리: 방 하나라도 0%
-        foreach (var room in allRooms)
+        // 사보타주 승리: 방 하나라도 0% (roomDestroyLoss 옵션)
+        if (GameManager.Instance.roomDestroyLoss)
         {
-            if (room.GetCurrentHealth() <= 0f)
+            foreach (var room in allRooms)
             {
-                GameManager.Instance.SabotageWin($"{room.GetRoomName()} 완전 파괴!");
-                return;
+                if (room.GetCurrentHealth() <= 0f)
+                {
+                    GameManager.Instance.SabotageWin($"{room.GetRoomName()} 완전 파괴!");
+                    return;
+                }
             }
         }
 

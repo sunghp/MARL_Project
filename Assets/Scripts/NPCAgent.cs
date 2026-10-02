@@ -340,6 +340,7 @@ public class NPCAgent : Agent
     {
         var captainGun = GetComponent<CaptainGun>();
         if (captainGun == null || captainGun.GetRemainingBullets() <= 0) return;
+        if (!gameManager.CanShoot()) return;   // 시작 직후 사격 유예
 
         // 선택한 슬롯의 캐릭터: 살아있고 시야 안이어야 사격 가능
         GameObject target = GetOtherSlot(slot);

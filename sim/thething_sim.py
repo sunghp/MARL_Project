@@ -67,6 +67,11 @@ DEFAULT_PARAMS = {
     "move_speed": 5.0,
     "vision_range": 10.0,
     "max_episode_time": 300.0,
+    # 밸런스 옵션 (기본값 = 현재 Unity 동작)
+    "room_destroy_loss": 1.0,          # 1: 방 하나 0% → 즉시 사보타주 승리 / 0: 평균 안정도로만 판정
+    "alert_threshold": 30.0,           # 위치 알림(전원에게 안정도 공개) 임계값
+    "repair_interrupts_sabotage": 0.0, # 1: 부수는 중인 방에 수리를 시작하면 부수기 중단
+    "shoot_grace_time": 0.0,           # 게임 시작 후 이 시간(초) 동안 사격 불가
     "eval_mode": 0.0,
     "frozen_team": 0.0,
 }
@@ -84,6 +89,8 @@ HUMAN, SABOTEUR, CAPTAIN = 0, 1, 2
 # 실험용 변형 (기본값 = 현재 Unity 코드와 동일)
 #   SIM_COMMIT_MOVE=1 : 방으로 이동 중에는 새 방 선택을 무시 (도착해야 다음 이동 명령 반영)
 COMMIT_MOVE = os.environ.get("SIM_COMMIT_MOVE", "0") == "1"
+#   SIM_INTERRUPT_BONUS=x : 부수기를 끊은 인간팀 에이전트에게 보상 x (기본 0)
+INTERRUPT_BONUS = float(os.environ.get("SIM_INTERRUPT_BONUS", "0"))
 
 
 class Room:
@@ -196,6 +203,7 @@ class TheThingWorld:
         self.sab_total = 0
         self.sab_hidden = 0
         self.repair_total = 0
+        self.sab_interrupted = 0
         self.witnessed = {}
         self.alive = list(self.chars)          # allCharacters (사망 시 제거)
         for r in self.rooms:
@@ -235,7 +243,8 @@ class TheThingWorld:
             rule = False
             if self.eval_mode and self.frozen_team != 0:
                 is_sab = self.role[c.idx] == SABOTEUR
-                rule = is_sab if self.frozen_team == 1 else (not is_sab)
+                # 1=사보타주 봇, 2=인간팀 봇, 3=전원 봇(시뮬레이터 분석 전용)
+                rule = True if self.frozen_team == 3 else (is_sab if self.frozen_team == 1 else (not is_sab))
             c.use_ml = not rule
         self.game_index += 1
         self.game_start_tick = self.total_ticks
@@ -380,7 +389,7 @@ class TheThingWorld:
         for r in self.rooms:
             d = dist(c.pos, r.pos)
             local.append(d / MAP_SIZE)
-            if d <= vis or r.health <= 30.0:
+            if d <= vis or r.health <= self.p("alert_threshold"):
                 local += [r.health / 100.0, 1.0 if r.used_by is not None else 0.0, 1.0]
             else:
                 local += [0.0, 0.0, 0.0]
@@ -431,7 +440,7 @@ class TheThingWorld:
         a.prev_avg_health = self.avg_health
 
     def _try_shoot(self, c, slot):
-        if c.bullets <= 0:
+        if c.bullets <= 0 or self.timer < self.p("shoot_grace_time"):
             return
         others = self._other_slots(c)
         if slot >= len(others):
@@ -504,7 +513,15 @@ class TheThingWorld:
         if c.room is None or not self._near(c):
             return False
         if c.room.used_by is not None:
-            return False
+            u = c.room.used_by
+            if (not sabotage and u is not c and u.sabotaging
+                    and self.p("repair_interrupts_sabotage") > 0.5):
+                self._cancel(u)                  # 수리 시작이 부수기를 끊는다
+                self.sab_interrupted += 1
+                if INTERRUPT_BONUS and c.use_ml and self.role[c.idx] != SABOTEUR:
+                    c.agent.reward += INTERRUPT_BONUS
+            else:
+                return False
         c.room.used_by = c
         c.sabotaging = sabotage
         c.interacting = True
@@ -530,13 +547,13 @@ class TheThingWorld:
         before = room.health
         if c.sabotaging:
             room.health = max(0.0, room.health - self.p("sabotage_damage"))
-            if room.health <= 30.0 and not room.alerted:
+            if room.health <= self.p("alert_threshold") and not room.alerted:
                 room.alerted = True
                 self._on_alert(room)
             self._on_sabotage_detected(c, room)
         else:
             room.health = min(100.0, room.health + self.p("repair_amount"))
-            if room.health > 30.0 and room.alerted:
+            if room.health > self.p("alert_threshold") and room.alerted:
                 room.alerted = False
         change = room.health - before
         self._update_avg_health()
@@ -620,10 +637,11 @@ class TheThingWorld:
             self.sabotage_win("에피소드 시간 초과")
             return
         # SystemHealth.CheckWinConditions
-        for r in self.rooms:
-            if r.health <= 0.0:
-                self.sabotage_win(f"{r.name} 완전 파괴")
-                return
+        if self.p("room_destroy_loss") > 0.5:
+            for r in self.rooms:
+                if r.health <= 0.0:
+                    self.sabotage_win(f"{r.name} 완전 파괴")
+                    return
         if self.avg_health <= self.p("sabotage_win_threshold"):
             self.sabotage_win("평균 안정도 임계 이하")
             return
@@ -681,6 +699,7 @@ class TheThingWorld:
                 "sab_total": self.sab_total,
                 "sab_hidden": self.sab_hidden,
                 "repairs": self.repair_total,
+                "sab_interrupted": self.sab_interrupted,
                 "shots": self.shots,
                 "shots_hit": self.shots_hit,
                 "avg_health": round(self.avg_health, 1),
@@ -732,7 +751,8 @@ class TheThingWorld:
             c.bot_wants_sab = True
         else:
             # 알람 방 우선, 없으면 다른 캐릭터와 먼 방으로 분산
-            alerted = [r for r in self.rooms if r.alerted and r.used_by is None]
+            can_cut = self.p("repair_interrupts_sabotage") > 0.5
+            alerted = [r for r in self.rooms if r.alerted and (r.used_by is None or can_cut)]
             if alerted:
                 r = min(alerted, key=lambda r: dist(c.pos, r.pos))
             else:
@@ -775,7 +795,7 @@ class TheThingWorld:
                     self.suspicion[o.idx] = self.suspicion.get(o.idx, 0.0) + 20.0
 
     def _captain_bot(self, cap):
-        if cap.bullets <= 0:
+        if cap.bullets <= 0 or self.timer < self.p("shoot_grace_time"):
             return
         cands = [(v, i) for i, v in self.suspicion.items()
                  if v >= 100.0 and self.chars[i].active]

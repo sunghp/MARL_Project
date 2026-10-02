@@ -3130,7 +3130,7 @@ MonoBehaviour:
   stoppedSpeed: 0
   maxSystemHealth: 100
   shipStopThreshold: 50
-  locationAlertThreshold: 30
+  locationAlertThreshold: 70
   sabotageWinThreshold: 30
   sabotageTime: 3
   sabotageDamage: 10

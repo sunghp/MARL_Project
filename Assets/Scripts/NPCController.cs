@@ -175,7 +175,7 @@ public class NPCController : MonoBehaviour
         bool near = IsNearInteractionPoint();
         if (currentInteractionPoint != null && near)
         {
-            if (!currentInteractionPoint.TryStartInteraction(gameObject))
+            if (!currentInteractionPoint.TryStartInteraction(gameObject, true))
             {
                 return;
             }
@@ -552,8 +552,9 @@ public class NPCController : MonoBehaviour
             return;
         }
 
-        // 상호작용 시작 시도
-        if (currentInteractionPoint.TryStartInteraction(gameObject))
+        // 상호작용 시작 시도 (규칙봇: 사보타주가 아니면 수리)
+        bool wantsRepair = RoleManager.Instance == null || !RoleManager.Instance.IsSaboteur(gameObject);
+        if (currentInteractionPoint.TryStartInteraction(gameObject, wantsRepair))
         {
             // 규칙봇 자동 경로: 역할 기반으로 부수기/고치기 결정
             // (사보타주는 위험 시 순찰하므로, 이 경로엔 부수기 타겟에 도착했을 때만 옴)

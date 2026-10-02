@@ -83,7 +83,8 @@ public class CaptainGun : MonoBehaviour
     void HandleInput()
     {
         // Q키: 카페 소집
-        if (Input.GetKeyDown(KeyCode.Q) && !isMeetingActive && remainingBullets > 0)
+        if (Input.GetKeyDown(KeyCode.Q) && !isMeetingActive && remainingBullets > 0 &&
+            GameManager.Instance.CanShoot())
         {
             StartMeeting();
         }

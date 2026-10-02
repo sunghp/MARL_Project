@@ -67,7 +67,7 @@ public class InteractionPoint : MonoBehaviour
             OnSabotageDetected?.Invoke(user, roomName, transform.position);
 
             // 30% 이하 알림
-            if (currentHealth <= 30f && !hasAlerted)
+            if (currentHealth <= GameManager.Instance.locationAlertThreshold && !hasAlerted)
             {
                 hasAlerted = true;
                 SystemHealth.Instance.TriggerRoomAlert(roomName);
@@ -83,8 +83,8 @@ public class InteractionPoint : MonoBehaviour
             Debug.Log($"[고치기] {user.name}이(가) {roomName}을(를) 수리! (안정도: {currentHealth}%)");
 #endif
 
-            // 30% 초과하면 알림 리셋 + 수리 완료 이벤트
-            if (currentHealth > 30f && hasAlerted)
+            // 알림 임계값 초과하면 알림 리셋 + 수리 완료 이벤트
+            if (currentHealth > GameManager.Instance.locationAlertThreshold && hasAlerted)
             {
                 hasAlerted = false;
                 OnRoomRepaired?.Invoke(roomName);
@@ -108,6 +108,23 @@ public class InteractionPoint : MonoBehaviour
     // ===== 상호작용 시작 =====
     public bool TryStartInteraction(GameObject user)
     {
+        return TryStartInteraction(user, false);
+    }
+
+    // isRepair: 수리 시도. repairInterruptsSabotage가 켜져 있으면 부수는 중인 NPC를 끊고 자리를 차지한다.
+    public bool TryStartInteraction(GameObject user, bool isRepair)
+    {
+        if (isBeingUsed && isRepair && currentUser != null && currentUser != user &&
+            GameManager.Instance != null && GameManager.Instance.repairInterruptsSabotage)
+        {
+            NPCController saboteurCtrl = currentUser.GetComponent<NPCController>();
+            if (saboteurCtrl != null && saboteurCtrl.IsInteracting() && saboteurCtrl.isSabotaging)
+            {
+                saboteurCtrl.CancelCurrentInteraction();   // 방 점유도 해제됨
+                GameManager.Instance.RecordSabotageInterrupted();
+            }
+        }
+
         if (isBeingUsed)
         {
             Debug.Log($"[상호작용 불가] {roomName}은(는) 이미 사용 중입니다.");

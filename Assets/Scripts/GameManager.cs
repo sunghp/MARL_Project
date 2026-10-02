@@ -40,10 +40,19 @@ public class GameManager : MonoBehaviour
     public float shipStopThreshold = 50f;
 
     [Tooltip("위치 공지 임계값")]
-    public float locationAlertThreshold = 30f;
+    public float locationAlertThreshold = 70f;   // 30 → 70: 인간팀이 대응할 시간 확보 (sim/results/balance)
 
     [Tooltip("사보타주 승리 임계값 (전체 평균 안정도)")]
     public float sabotageWinThreshold = 30f;
+
+    [Tooltip("방 하나라도 안정도 0%가 되면 즉시 사보타주 승리")]
+    public bool roomDestroyLoss = true;
+
+    [Tooltip("부수는 중인 방에 수리를 시작하면 부수기를 중단시킴")]
+    public bool repairInterruptsSabotage = true;
+
+    [Tooltip("게임 시작 후 이 시간(초) 동안 함장 사격 불가 (카페에 모인 상태로 무작위 사격 방지)")]
+    public float shootGraceTime = 10f;
 
     [Header("=== 상호작용 파라미터 ===")]
     [Tooltip("부수기 시간 (초)")]
@@ -119,6 +128,7 @@ public class GameManager : MonoBehaviour
     private int sabotageTotal = 0;
     private int sabotageHidden = 0;
     private int repairTotal = 0;   // 에피소드당 수리 완료 횟수 (활동량 지표)
+    private int sabotageInterrupted = 0;   // 수리로 끊긴 부수기 횟수
 
     // ===== 목격 기록: 관찰자 → 부수는 걸 직접 본 캐릭터들 (에피소드 단위) =====
     private Dictionary<GameObject, HashSet<GameObject>> witnessedSaboteurs =
@@ -178,6 +188,7 @@ public class GameManager : MonoBehaviour
         // 활동량 지표: 에피소드당 부수기/수리 횟수 (0에 가까우면 "멈춤" 감지)
         recorder.Add("behavior/sabotage_count", (float)sabotageTotal);
         recorder.Add("behavior/repair_count", (float)repairTotal);
+        recorder.Add("behavior/sabotage_interrupted", (float)sabotageInterrupted);
 
         // 승패 결과: 트레이너가 승률 집계 + 죽은 에이전트(재활성화 시 새 episode id라 보상을 못 받음)의
         // 게임 종료 보상 귀속에 사용
@@ -472,6 +483,11 @@ public class GameManager : MonoBehaviour
         repairTotal++;
     }
 
+    public void RecordSabotageInterrupted()
+    {
+        sabotageInterrupted++;
+    }
+
     // ===== 평가 모드: 팀별 제어 모드 적용 =====
     // frozenTeam: 0=없음(전원 ML), 1=사보타주 고정(규칙봇), 2=인간팀 고정(규칙봇)
     // 고정된 팀은 규칙봇(NPCAIBrain)이, 나머지 팀은 학습 정책(ML)이 제어 → 학습팀의 절대 실력 측정
@@ -501,6 +517,7 @@ public class GameManager : MonoBehaviour
 
     // ===== Getter 메서드 =====
     public float GetCurrentDistance() => currentDistance;
+    public bool CanShoot() => episodeTimer >= shootGraceTime;
 
     // 에피소드 내내(사망해도) 순서가 고정된 캐릭터 목록 — 에이전트 관측/사격 슬롯 기준
     public IReadOnlyList<GameObject> GetCharacterSlots() =>
@@ -543,6 +560,7 @@ public class GameManager : MonoBehaviour
         sabotageTotal = 0;
         sabotageHidden = 0;
         repairTotal = 0;
+        sabotageInterrupted = 0;
         witnessedSaboteurs.Clear();
 
         // 원본에서 allCharacters 복원 (RemoveCharacter로 빠진 캐릭터 복구)
@@ -645,6 +663,10 @@ public class GameManager : MonoBehaviour
         moveSpeed           = envParams.GetWithDefault("move_speed", moveSpeed);
         visionRange         = envParams.GetWithDefault("vision_range", visionRange);
         maxEpisodeTime      = envParams.GetWithDefault("max_episode_time", maxEpisodeTime);
+        locationAlertThreshold = envParams.GetWithDefault("alert_threshold", locationAlertThreshold);
+        roomDestroyLoss     = envParams.GetWithDefault("room_destroy_loss", roomDestroyLoss ? 1f : 0f) > 0.5f;
+        repairInterruptsSabotage = envParams.GetWithDefault("repair_interrupts_sabotage", repairInterruptsSabotage ? 1f : 0f) > 0.5f;
+        shootGraceTime      = envParams.GetWithDefault("shoot_grace_time", shootGraceTime);
 
         // 평가 모드 파라미터 (env param이 있으면 Inspector 값 덮어씀)
         evalMode   = envParams.GetWithDefault("eval_mode", evalMode ? 1f : 0f) > 0.5f;

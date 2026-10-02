@@ -55,3 +55,9 @@ environment_parameters:
 
   # 에피소드
   max_episode_time: 300.0
+
+  # 밸런스 조정 (가상 환경 실험으로 결정: sim/results/balance/)
+  room_destroy_loss: 1.0            # 1: 방 하나 0% → 즉시 사보타주 승리 (유지)
+  alert_threshold: 70.0             # 위치 알림 임계값 30 → 70 (인간이 대응할 시간 확보)
+  repair_interrupts_sabotage: 1.0   # 부수는 중인 방에 수리를 시작하면 부수기 중단
+  shoot_grace_time: 10.0            # 시작 후 10초간 사격 불가 (카페에 모인 상태로 무작위 사격 방지)

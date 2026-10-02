@@ -794,6 +794,7 @@ public class NPCAIBrain : MonoBehaviour
         if (GameManager.Instance.currentState != GameManager.GameState.Playing) return;
         if (captainGun == null) return;
         if (captainGun.GetRemainingBullets() <= 0) return;
+        if (!GameManager.Instance.CanShoot()) return;   // 시작 직후 사격 유예
         
         GameObject target = GetExecutionTarget();
         
