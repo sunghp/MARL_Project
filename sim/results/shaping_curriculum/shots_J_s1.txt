@@ -1,0 +1,7 @@
+games 60 human win 0.11666666666666667
+shots 0 target Counter()
+목격 플래그가 켜진 대상을 쐈나: Counter()
+사격 순간 함장 관측에 목격 플래그가 하나라도 있었나: Counter()
+대상 상태: Counter()
+사격 시각(초) 분포: None
+거리: None

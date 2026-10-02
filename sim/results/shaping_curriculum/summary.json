@@ -1,0 +1,608 @@
+{
+ "H": [
+  {
+   "dir": "expH2_s0",
+   "train_games": 1235,
+   "bot_train_games": 0,
+   "bot_games_human_win_last20pct": null,
+   "trainer_counted_episodes": 1793,
+   "first_20pct": {
+    "games": 247,
+    "human_win_rate": 0.563,
+    "duration_s": 76.5,
+    "sabotage_per_game": 4.74,
+    "hidden_rate": 0.997,
+    "repairs_per_game": 0.13,
+    "interrupts_per_game": 0.0,
+    "shots_per_game": 0.02,
+    "shot_accuracy": 0.8,
+    "witness_per_game": 0.02,
+    "shot_in_first_5s": 0.0,
+    "reasons": {
+     "목적지 도착": 0.563,
+     "방 완전 파괴": 0.437
+    }
+   },
+   "last_20pct": {
+    "games": 247,
+    "human_win_rate": 0.0,
+    "duration_s": 47.0,
+    "sabotage_per_game": 10.45,
+    "hidden_rate": 1.0,
+    "repairs_per_game": 0.27,
+    "interrupts_per_game": 0.0,
+    "shots_per_game": 0.0,
+    "shot_accuracy": 0.0,
+    "witness_per_game": 0.0,
+    "shot_in_first_5s": 0.0,
+    "reasons": {
+     "방 완전 파괴": 1.0
+    }
+   },
+   "eval_blocks": [
+    {
+     "at_decisions": 103307,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 278002,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 449863,
+     "saboteur_vs_bot": 0.355,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 615588,
+     "saboteur_vs_bot": 0.516,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 781709,
+     "saboteur_vs_bot": 0.194,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 949051,
+     "saboteur_vs_bot": 0.516,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1112788,
+     "saboteur_vs_bot": 0.323,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1281415,
+     "saboteur_vs_bot": 0.355,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1447049,
+     "saboteur_vs_bot": 0.452,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    }
+   ],
+   "entropy": {
+    "human": {
+     "start": 4.394,
+     "end": 4.224
+    },
+    "saboteur": {
+     "start": 4.394,
+     "end": 1.264
+    },
+    "captain": {
+     "start": 4.394,
+     "end": 4.152
+    }
+   }
+  }
+ ],
+ "J": [
+  {
+   "dir": "expJ_s0",
+   "train_games": 475,
+   "bot_train_games": 474,
+   "bot_games_human_win_last20pct": 0.032,
+   "trainer_counted_episodes": 1507,
+   "first_20pct": {
+    "games": 95,
+    "human_win_rate": 0.979,
+    "duration_s": 99.7,
+    "sabotage_per_game": 2.45,
+    "hidden_rate": 0.661,
+    "repairs_per_game": 1.2,
+    "interrupts_per_game": 0.22,
+    "shots_per_game": 0.06,
+    "shot_accuracy": 0.833,
+    "witness_per_game": 0.78,
+    "shot_in_first_5s": 0.0,
+    "reasons": {
+     "목적지 도착": 0.979,
+     "방 완전 파괴": 0.021
+    }
+   },
+   "last_20pct": {
+    "games": 95,
+    "human_win_rate": 0.979,
+    "duration_s": 99.0,
+    "sabotage_per_game": 2.17,
+    "hidden_rate": 0.568,
+    "repairs_per_game": 1.59,
+    "interrupts_per_game": 5.14,
+    "shots_per_game": 0.0,
+    "shot_accuracy": 0.0,
+    "witness_per_game": 3.93,
+    "shot_in_first_5s": 0.0,
+    "reasons": {
+     "목적지 도착": 0.979,
+     "방 완전 파괴": 0.021
+    }
+   },
+   "eval_blocks": [
+    {
+     "at_decisions": 101884,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 276698,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 452053,
+     "saboteur_vs_bot": 0.065,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 624580,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 799492,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 972500,
+     "saboteur_vs_bot": 0.355,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1129780,
+     "saboteur_vs_bot": 0.355,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1283116,
+     "saboteur_vs_bot": 0.452,
+     "human_vs_bot": 0.032,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1437603,
+     "saboteur_vs_bot": 0.194,
+     "human_vs_bot": 0.129,
+     "n_sab": 31,
+     "n_hum": 31
+    }
+   ],
+   "entropy": {
+    "human": {
+     "start": 4.394,
+     "end": 2.81
+    },
+    "saboteur": {
+     "start": 4.394,
+     "end": 2.862
+    },
+    "captain": {
+     "start": 4.394,
+     "end": 4.323
+    }
+   }
+  },
+  {
+   "dir": "expJ_s1",
+   "train_games": 469,
+   "bot_train_games": 426,
+   "bot_games_human_win_last20pct": 0.0,
+   "trainer_counted_episodes": 1453,
+   "first_20pct": {
+    "games": 93,
+    "human_win_rate": 0.989,
+    "duration_s": 98.9,
+    "sabotage_per_game": 0.03,
+    "hidden_rate": 1.0,
+    "repairs_per_game": 0.0,
+    "interrupts_per_game": 0.0,
+    "shots_per_game": 0.03,
+    "shot_accuracy": 0.333,
+    "witness_per_game": 0.02,
+    "shot_in_first_5s": 0.011,
+    "reasons": {
+     "목적지 도착": 0.989,
+     "인간과 동수(오사)": 0.011
+    }
+   },
+   "last_20pct": {
+    "games": 93,
+    "human_win_rate": 0.753,
+    "duration_s": 85.5,
+    "sabotage_per_game": 5.08,
+    "hidden_rate": 0.958,
+    "repairs_per_game": 1.23,
+    "interrupts_per_game": 0.26,
+    "shots_per_game": 0.54,
+    "shot_accuracy": 1.0,
+    "witness_per_game": 1.31,
+    "shot_in_first_5s": 0.0,
+    "reasons": {
+     "목적지 도착": 0.559,
+     "방 완전 파괴": 0.247,
+     "사보타주 전원 처형": 0.194
+    }
+   },
+   "eval_blocks": [
+    {
+     "at_decisions": 101730,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 276797,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 452829,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 629508,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 804126,
+     "saboteur_vs_bot": 0.161,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 957902,
+     "saboteur_vs_bot": 0.032,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1124319,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1299874,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1475217,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    }
+   ],
+   "entropy": {
+    "human": {
+     "start": 4.394,
+     "end": 3.96
+    },
+    "saboteur": {
+     "start": 4.394,
+     "end": 2.585
+    },
+    "captain": {
+     "start": 4.394,
+     "end": 4.356
+    }
+   }
+  }
+ ],
+ "K": [
+  {
+   "dir": "expK_s0",
+   "train_games": 713,
+   "bot_train_games": 0,
+   "bot_games_human_win_last20pct": null,
+   "trainer_counted_episodes": 1271,
+   "first_20pct": {
+    "games": 142,
+    "human_win_rate": 0.894,
+    "duration_s": 97.0,
+    "sabotage_per_game": 1.42,
+    "hidden_rate": 0.995,
+    "repairs_per_game": 0.14,
+    "interrupts_per_game": 0.0,
+    "shots_per_game": 0.03,
+    "shot_accuracy": 0.75,
+    "witness_per_game": 0.02,
+    "shot_in_first_5s": 0.0,
+    "reasons": {
+     "목적지 도착": 0.894,
+     "방 완전 파괴": 0.106
+    }
+   },
+   "last_20pct": {
+    "games": 142,
+    "human_win_rate": 1.0,
+    "duration_s": 100.0,
+    "sabotage_per_game": 0.4,
+    "hidden_rate": 0.333,
+    "repairs_per_game": 0.38,
+    "interrupts_per_game": 1.36,
+    "shots_per_game": 0.0,
+    "shot_accuracy": 0.0,
+    "witness_per_game": 2.74,
+    "shot_in_first_5s": 0.0,
+    "reasons": {
+     "목적지 도착": 1.0
+    }
+   },
+   "eval_blocks": [
+    {
+     "at_decisions": 103307,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 278394,
+     "saboteur_vs_bot": 0.677,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 436829,
+     "saboteur_vs_bot": 0.742,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 593840,
+     "saboteur_vs_bot": 0.097,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 765971,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 941326,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1117361,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1292689,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1468269,
+     "saboteur_vs_bot": 0.032,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    }
+   ],
+   "entropy": {
+    "human": {
+     "start": 4.394,
+     "end": 2.44
+    },
+    "saboteur": {
+     "start": 4.394,
+     "end": 3.816
+    },
+    "captain": {
+     "start": 4.394,
+     "end": 4.255
+    }
+   }
+  }
+ ],
+ "L": [
+  {
+   "dir": "expL_s0",
+   "train_games": 673,
+   "bot_train_games": 489,
+   "bot_games_human_win_last20pct": 0.0,
+   "trainer_counted_episodes": 1720,
+   "first_20pct": {
+    "games": 134,
+    "human_win_rate": 0.5,
+    "duration_s": 77.7,
+    "sabotage_per_game": 5.99,
+    "hidden_rate": 1.0,
+    "repairs_per_game": 0.47,
+    "interrupts_per_game": 0.0,
+    "shots_per_game": 0.01,
+    "shot_accuracy": 0.5,
+    "witness_per_game": 0.0,
+    "shot_in_first_5s": 0.0,
+    "reasons": {
+     "목적지 도착": 0.5,
+     "방 완전 파괴": 0.5
+    }
+   },
+   "last_20pct": {
+    "games": 134,
+    "human_win_rate": 0.0,
+    "duration_s": 49.0,
+    "sabotage_per_game": 10.19,
+    "hidden_rate": 1.0,
+    "repairs_per_game": 0.1,
+    "interrupts_per_game": 0.0,
+    "shots_per_game": 0.0,
+    "shot_accuracy": 0.0,
+    "witness_per_game": 0.0,
+    "shot_in_first_5s": 0.0,
+    "reasons": {
+     "방 완전 파괴": 1.0
+    }
+   },
+   "eval_blocks": [
+    {
+     "at_decisions": 102306,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 277479,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 453485,
+     "saboteur_vs_bot": 0.161,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 623806,
+     "saboteur_vs_bot": 0.516,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 776592,
+     "saboteur_vs_bot": 0.548,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 928140,
+     "saboteur_vs_bot": 0.677,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1081142,
+     "saboteur_vs_bot": 0.613,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1232887,
+     "saboteur_vs_bot": 0.806,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1386397,
+     "saboteur_vs_bot": 0.645,
+     "human_vs_bot": 0.0,
+     "n_sab": 31,
+     "n_hum": 31
+    }
+   ],
+   "entropy": {
+    "human": {
+     "start": 4.394,
+     "end": 4.18
+    },
+    "saboteur": {
+     "start": 4.394,
+     "end": 1.838
+    },
+    "captain": {
+     "start": 4.394,
+     "end": 4.171
+    }
+   }
+  }
+ ]
+}
