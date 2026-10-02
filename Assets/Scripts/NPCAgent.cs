@@ -340,12 +340,11 @@ public class NPCAgent : Agent
     {
         var captainGun = GetComponent<CaptainGun>();
         if (captainGun == null || captainGun.GetRemainingBullets() <= 0) return;
-        if (!gameManager.CanShoot()) return;   // 시작 직후 사격 유예
 
-        // 선택한 슬롯의 캐릭터: 살아있고 시야 안이어야 사격 가능
+        // 선택한 슬롯의 캐릭터: 유예 시간, 근거(목격 기록), 사거리 규칙을 통과해야 사격
+        // (통과 못 하면 아무 일도 없음 → 근거 없는 무작위 오사 불가)
         GameObject target = GetOtherSlot(slot);
-        if (target == null || !target.activeInHierarchy) return;
-        if (Vector3.Distance(transform.position, target.transform.position) > gameManager.visionRange) return;
+        if (!gameManager.CanShootTarget(gameObject, target)) return;
 
         captainGun.TryExecuteTarget(target);
     }

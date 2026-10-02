@@ -73,6 +73,9 @@ DEFAULT_PARAMS = {
     "repair_interrupts_sabotage": 0.0, # 1: 부수는 중인 방에 수리를 시작하면 부수기 중단
     "shoot_grace_time": 0.0,           # 게임 시작 후 이 시간(초) 동안 사격 불가
     "share_witness": 0.0,              # 1: 인간이 부수기를 목격하면 함장에게 공유(신고) → 함장 목격 플래그
+    "shoot_requires_evidence": 0.0,    # 1: 함장은 목격 플래그(직접 목격/신고)가 있는 대상만 쏠 수 있음
+    "captain_bullets": 2.0,
+    "shoot_range": -1.0,               # 사격 사거리: -1 = 시야(vision_range), 0 = 무제한(소집 후 처형), >0 = 그 거리
     "eval_mode": 0.0,
     "frozen_team": 0.0,
 }
@@ -220,7 +223,7 @@ class TheThingWorld:
             c.timer = 0.0
             c.room = None
             c.dest = None
-            c.bullets = 2
+            c.bullets = int(self.p("captain_bullets"))
             c.bot_idle = 0.0
             c.bot_wants_sab = False
         self.suspicion = {}
@@ -449,9 +452,18 @@ class TheThingWorld:
         t = others[slot]
         if not t.active:
             return
-        if dist(c.pos, t.pos) > self.p("vision_range"):
+        if not self._can_shoot_target(c, t):
             return
         self._execute(c, t)
+
+    def _can_shoot_target(self, c, t):
+        """사격 규칙: 근거(목격 플래그) + 사거리"""
+        if self.p("shoot_requires_evidence") > 0.5 and t.idx not in self.witnessed.get(c.idx, ()):
+            return False
+        rng = self.p("shoot_range")
+        if rng < 0:
+            rng = self.p("vision_range")
+        return rng == 0 or dist(c.pos, t.pos) <= rng
 
     def _execute(self, shooter, t):
         """CaptainGun.TryExecuteTarget"""
@@ -802,8 +814,13 @@ class TheThingWorld:
     def _captain_bot(self, cap):
         if cap.bullets <= 0 or self.timer < self.p("shoot_grace_time"):
             return
-        cands = [(v, i) for i, v in self.suspicion.items()
-                 if v >= 100.0 and self.chars[i].active]
+        if self.p("shoot_requires_evidence") > 0.5:
+            # 근거 규칙: 목격(신고 포함)한 대상 중 사거리 안에 있는 대상만
+            cands = [(1.0, i) for i in self.witnessed.get(cap.idx, ())
+                     if self.chars[i].active and self._can_shoot_target(cap, self.chars[i])]
+        else:
+            cands = [(v, i) for i, v in self.suspicion.items()
+                     if v >= 100.0 and self.chars[i].active]
         if not cands:
             self._exec_timer = 0.0
             return

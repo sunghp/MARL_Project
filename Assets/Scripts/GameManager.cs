@@ -57,6 +57,12 @@ public class GameManager : MonoBehaviour
     [Tooltip("인간팀이 부수기를 목격하면 함장에게 공유(신고) → 함장의 목격 기록에도 추가")]
     public bool shareWitness = true;
 
+    [Tooltip("NPC 함장은 목격 기록(직접 목격 또는 신고)이 있는 대상만 쏠 수 있음 → 무작위 오사 방지")]
+    public bool shootRequiresEvidence = true;
+
+    [Tooltip("NPC 함장 사격 사거리: -1 = 시야(visionRange), 0 = 무제한(소집 후 처형처럼 지목), >0 = 그 거리")]
+    public float shootRange = 0f;
+
     [Header("=== 상호작용 파라미터 ===")]
     [Tooltip("부수기 시간 (초)")]
     public float sabotageTime = 3f;
@@ -533,6 +539,16 @@ public class GameManager : MonoBehaviour
     public float GetCurrentDistance() => currentDistance;
     public bool CanShoot() => episodeTimer >= shootGraceTime;
 
+    // NPC 함장 사격 규칙: 유예 시간 + 근거(목격 기록) + 사거리
+    public bool CanShootTarget(GameObject shooter, GameObject target)
+    {
+        if (shooter == null || target == null || !target.activeInHierarchy) return false;
+        if (!CanShoot()) return false;
+        if (shootRequiresEvidence && !HasWitnessedSabotage(shooter, target)) return false;
+        float range = shootRange < 0f ? visionRange : shootRange;
+        return range == 0f || Vector3.Distance(shooter.transform.position, target.transform.position) <= range;
+    }
+
     // 에피소드 내내(사망해도) 순서가 고정된 캐릭터 목록 — 에이전트 관측/사격 슬롯 기준
     public IReadOnlyList<GameObject> GetCharacterSlots() =>
         allCharactersOriginal.Count > 0 ? allCharactersOriginal : allCharacters;
@@ -682,6 +698,9 @@ public class GameManager : MonoBehaviour
         repairInterruptsSabotage = envParams.GetWithDefault("repair_interrupts_sabotage", repairInterruptsSabotage ? 1f : 0f) > 0.5f;
         shootGraceTime      = envParams.GetWithDefault("shoot_grace_time", shootGraceTime);
         shareWitness        = envParams.GetWithDefault("share_witness", shareWitness ? 1f : 0f) > 0.5f;
+        shootRequiresEvidence = envParams.GetWithDefault("shoot_requires_evidence", shootRequiresEvidence ? 1f : 0f) > 0.5f;
+        shootRange          = envParams.GetWithDefault("shoot_range", shootRange);
+        captainBullets      = (int)envParams.GetWithDefault("captain_bullets", captainBullets);
 
         // 평가 모드 파라미터 (env param이 있으면 Inspector 값 덮어씀)
         evalMode   = envParams.GetWithDefault("eval_mode", evalMode ? 1f : 0f) > 0.5f;

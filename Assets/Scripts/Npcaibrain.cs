@@ -774,6 +774,17 @@ public class NPCAIBrain : MonoBehaviour
 
     public GameObject GetExecutionTarget()
     {
+        // 근거 규칙: 목격(신고 포함) 기록이 있는 대상만, 의심 점수와 무관하게 처형 후보
+        if (GameManager.Instance.shootRequiresEvidence)
+        {
+            foreach (var ch in GameManager.Instance.allCharacters)
+            {
+                if (ch != gameObject && GameManager.Instance.CanShootTarget(gameObject, ch))
+                    return ch;
+            }
+            return null;
+        }
+
         foreach (var kvp in suspicionScores)
         {
             if (kvp.Key == null || !kvp.Key.activeInHierarchy) continue;
