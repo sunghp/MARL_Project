@@ -27,9 +27,29 @@ GRIDS = {
         "captain_bullets": [1.0, 2.0],
         "alert_threshold": [60.0, 70.0],
     },
+    # 4차: v3_chosen 기준 인간팀 학습용 밸런스
+    "v4": {
+        "ship_speed_by_health": [0.0, 1.0],
+        "spawn_spread": [0.0, 1.0],
+        "repair_range": [2.0, 5.0],
+        "repeat_damage_decay": [1.0, 0.95],
+        "sabotage_damage": [10.0, 7.0],
+    },
+    # 4차-2: 자동 수리
+    "v4b": {
+        "auto_repair": [0.0, 1.0],
+        "spawn_spread": [0.0, 1.0],
+        "repair_range": [2.0, 5.0],
+        "sabotage_damage": [10.0, 7.0],
+        "ship_speed_by_health": [1.0],
+    },
 }
-BASE = {"v2": "v1_chosen", "v3": "v2_chosen"}
-MATCHUPS = [("camper_vs_bot", 2, "camper"), ("bot_vs_bot", 3, "random"), ("rand_vs_rand", 0, "random")]
+BASE = {"v2": "v1_chosen", "v3": "v2_chosen", "v4": "v3_chosen", "v4b": "v3_chosen"}
+MATCHUPS = [("camper_vs_bot", 2, "camper"), ("bot_vs_bot", 3, "random"), ("rand_vs_rand", 0, "random"),
+            # 무작위 인간팀 vs 방 붙기 사보타주: 학습 전 인간팀도 가끔 이겨야 학습 신호가 생긴다
+            ("rand_vs_camper", 0, "camper"),
+            # 무작위 사보타주 vs 규칙봇 인간팀: 학습 전 사보타주도 가끔 이겨야 한다
+            ("rand_sab_vs_bot", 2, "random")]
 
 
 def one(args):

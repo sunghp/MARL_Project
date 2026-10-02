@@ -83,6 +83,13 @@ DEFAULT_PARAMS = {
     "reward_captain_hit": 0.0,         # 함장이 사보타주를 맞힘
     # 학습 상대 규칙봇: 0 = 없음, 1 = 사보타주 팀을 규칙봇으로, 2 = 인간팀을 규칙봇으로 (평가와 별개)
     "bot_team": 0.0,
+    # 밸런스 후보 (인간팀 학습용, 기본값 = 현재 동작)
+    "ship_speed_by_health": 0.0,       # 1: 함선 속도 = ship_speed × 평균 안정도/100 (수리가 도착 시간에 바로 반영)
+    "spawn_spread": 0.0,               # 1: 시작 위치를 카페 대신 서로 다른 방 근처로 분산
+    "repair_range": 2.0,               # 수리(및 수리로 끊기)를 시작할 수 있는 방과의 거리
+    "repeat_damage_decay": 1.0,        # 같은 방을 (수리 없이) 연속으로 부술수록 피해 × decay^n → 방 붙기 약화
+    "auto_repair": 0.0,                # 1: 인간팀은 손상된 방 근처(repair_range)에 가면 행동 선택 없이 자동 수리/끊기
+    "commit_move": 1.0 if os.environ.get("SIM_COMMIT_MOVE", "0") == "1" else 0.0,  # 1: 방으로 이동 중엔 새 방 선택 무시
     "eval_mode": 0.0,
     "frozen_team": 0.0,
 }
@@ -98,8 +105,7 @@ HEALTH_SCALE = 0.01
 HUMAN, SABOTEUR, CAPTAIN = 0, 1, 2
 
 # 실험용 변형 (기본값 = 현재 Unity 코드와 동일)
-#   SIM_COMMIT_MOVE=1 : 방으로 이동 중에는 새 방 선택을 무시 (도착해야 다음 이동 명령 반영)
-COMMIT_MOVE = os.environ.get("SIM_COMMIT_MOVE", "0") == "1"
+#   SIM_COMMIT_MOVE=1 : commit_move 파라미터 기본값을 1로 (이전 실험 C 재현용)
 #   SIM_INTERRUPT_BONUS=x : reward_interrupt 기본값 (이전 실험 E 재현용)
 
 
@@ -111,11 +117,13 @@ class Room:
         self.health = 100.0
         self.alerted = False
         self.used_by = None
+        self.hits_since_repair = 0
 
     def reset(self):
         self.health = 100.0
         self.alerted = False
         self.used_by = None
+        self.hits_since_repair = 0
 
 
 class AgentState:
@@ -223,9 +231,15 @@ class TheThingWorld:
         for r in self.rooms:
             r.reset()
         self._update_avg_health()
+        spawn_rooms = list(self.rooms)
+        self.rng.shuffle(spawn_rooms)
         for c in self.chars:
             c.active = True
-            c.pos = np.array([CAFE[0] + self.rng.uniform(-2, 2), CAFE[1] + self.rng.uniform(-2, 2)])
+            if self.p("spawn_spread") > 0.5:
+                base = spawn_rooms[c.idx % len(spawn_rooms)].pos
+                c.pos = np.array([base[0] + self.rng.uniform(-2, 2), base[1] + self.rng.uniform(-2, 2)])
+            else:
+                c.pos = np.array([CAFE[0] + self.rng.uniform(-2, 2), CAFE[1] + self.rng.uniform(-2, 2)])
             c.dead = False
             c.sabotaging = False
             c.interacting = False
@@ -444,9 +458,11 @@ class TheThingWorld:
             self._try_shoot(c, inter - SHOOT_OFFSET)
             if self.game_over or not c.active:
                 return
-        if not c.interacting and room_choice < MAX_ROOMS and not (COMMIT_MOVE and c.state == "moving"):
+        commit = self.p("commit_move") > 0.5
+        if not c.interacting and room_choice < MAX_ROOMS and not (commit and c.state == "moving"):
             self._move_to_room(c, self.rooms[room_choice])
-        if inter in (1, 2) and not c.interacting and self._near(c):
+        near_rng = self.p("repair_range") if inter == 2 else 2.0
+        if inter in (1, 2) and not c.interacting and self._near(c, near_rng):
             if inter == 1:
                 if role == SABOTEUR:
                     self._try_start(c, True)
@@ -548,11 +564,11 @@ class TheThingWorld:
         c.room = None
         c.state = "idle"
 
-    def _near(self, c):
-        return c.room is not None and dist(c.pos, c.room.pos) <= 2.0
+    def _near(self, c, rng=2.0):
+        return c.room is not None and dist(c.pos, c.room.pos) <= rng
 
     def _try_start(self, c, sabotage):
-        if c.room is None or not self._near(c):
+        if c.room is None or not self._near(c, 2.0 if sabotage else self.p("repair_range")):
             return False
         if c.room.used_by is not None:
             u = c.room.used_by
@@ -598,13 +614,16 @@ class TheThingWorld:
         room = c.room
         before = room.health
         if c.sabotaging:
-            room.health = max(0.0, room.health - self.p("sabotage_damage"))
+            dmg = self.p("sabotage_damage") * self.p("repeat_damage_decay") ** room.hits_since_repair
+            room.hits_since_repair += 1
+            room.health = max(0.0, room.health - dmg)
             if room.health <= self.p("alert_threshold") and not room.alerted:
                 room.alerted = True
                 self._on_alert(room)
             self._on_sabotage_detected(c, room)
         else:
             room.health = min(100.0, room.health + self.p("repair_amount"))
+            room.hits_since_repair = 0
             if room.health > self.p("alert_threshold") and room.alerted:
                 room.alerted = False
         change = room.health - before
@@ -650,6 +669,15 @@ class TheThingWorld:
                 continue
             if not c.use_ml:
                 self._bot_think(c)
+            if (self.p("auto_repair") > 0.5 and not c.interacting
+                    and self.role[c.idx] != SABOTEUR):
+                rr = self.p("repair_range")
+                near = [r for r in self.rooms
+                        if r.health < 100.0 and dist(c.pos, r.pos) <= rr
+                        and (r.used_by is None or r.used_by.sabotaging)]
+                if near:
+                    c.room = min(near, key=lambda r: dist(c.pos, r.pos))
+                    self._try_start(c, False)
             if c.state == "moving" and c.dest is not None:
                 d = c.dest - c.pos
                 remain = math.hypot(d[0], d[1])
@@ -683,7 +711,10 @@ class TheThingWorld:
             if self.game_over:
                 return
         # GameManager.Update
-        self.distance += (0.0 if self.ship_stopped else self.p("ship_speed")) * DT
+        speed = 0.0 if self.ship_stopped else self.p("ship_speed")
+        if self.p("ship_speed_by_health") > 0.5:
+            speed *= self.avg_health / 100.0
+        self.distance += speed * DT
         self.timer += DT
         if self.timer >= self.p("max_episode_time"):
             self.sabotage_win("에피소드 시간 초과")
