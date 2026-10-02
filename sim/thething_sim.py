@@ -72,6 +72,7 @@ DEFAULT_PARAMS = {
     "alert_threshold": 30.0,           # 위치 알림(전원에게 안정도 공개) 임계값
     "repair_interrupts_sabotage": 0.0, # 1: 부수는 중인 방에 수리를 시작하면 부수기 중단
     "shoot_grace_time": 0.0,           # 게임 시작 후 이 시간(초) 동안 사격 불가
+    "share_witness": 0.0,              # 1: 인간이 부수기를 목격하면 함장에게 공유(신고) → 함장 목격 플래그
     "eval_mode": 0.0,
     "frozen_team": 0.0,
 }
@@ -540,6 +541,10 @@ class TheThingWorld:
                 n += 1
                 if record:
                     self.witnessed.setdefault(o.idx, set()).add(sab.idx)
+                    cap = self.captain
+                    if (self.p("share_witness") > 0.5 and cap is not None and cap.active
+                            and cap is not o):
+                        self.witnessed.setdefault(cap.idx, set()).add(sab.idx)
         return n
 
     def _complete(self, c):
@@ -784,7 +789,7 @@ class TheThingWorld:
         if cap is None or cap.use_ml or sab is cap:
             return
         vis = self.p("vision_range")
-        if dist(cap.pos, sab.pos) <= vis:
+        if dist(cap.pos, sab.pos) <= vis or (self.p("share_witness") > 0.5 and sab.seen):
             self.suspicion[sab.idx] = self.suspicion.get(sab.idx, 0.0) + 50.0
         else:
             for o in self.alive:

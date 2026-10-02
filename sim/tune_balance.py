@@ -84,6 +84,8 @@ def summary(log):
         "sab": round(float(np.mean([g["sab_total"] for g in log])), 1),
         "rep": round(float(np.mean([g["repairs"] for g in log])), 1),
         "cut": round(float(np.mean([g.get("sab_interrupted", 0) for g in log])), 1),
+        "shots": round(float(np.mean([g["shots"] for g in log])), 2),
+        "hit": round(float(np.sum([g["shots_hit"] for g in log]) / max(1, np.sum([g["shots"] for g in log]))), 2),
         "reasons": dict(reasons.most_common(4)),
     }
 
