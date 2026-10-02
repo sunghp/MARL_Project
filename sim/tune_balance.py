@@ -38,6 +38,18 @@ PRESETS = {
         "share_witness": 1.0,
         "vision_range": 12.0,
     },
+    # 채택(3차): v2 + 함장 사격 규칙 — config/TheThing.yaml 현재값
+    "v3_chosen": {
+        "room_destroy_loss": 1.0,
+        "alert_threshold": 70.0,
+        "repair_interrupts_sabotage": 1.0,
+        "shoot_grace_time": 10.0,
+        "share_witness": 1.0,
+        "vision_range": 12.0,
+        "shoot_requires_evidence": 1.0,
+        "shoot_range": 25.0,
+        "captain_bullets": 2.0,
+    },
     # 방 파괴 승리까지 없애면 사보타주가 100초 안에 평균 안정도를 못 떨어뜨려 전패 (과보정)
     "no_room_destroy": {
         "room_destroy_loss": 0.0,

@@ -61,7 +61,7 @@ public class GameManager : MonoBehaviour
     public bool shootRequiresEvidence = true;
 
     [Tooltip("NPC 함장 사격 사거리: -1 = 시야(visionRange), 0 = 무제한(소집 후 처형처럼 지목), >0 = 그 거리")]
-    public float shootRange = 0f;
+    public float shootRange = 25f;   // sim/results/captain_rules (I)
 
     [Header("=== 상호작용 파라미터 ===")]
     [Tooltip("부수기 시간 (초)")]

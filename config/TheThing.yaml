@@ -62,3 +62,8 @@ environment_parameters:
   repair_interrupts_sabotage: 1.0   # 부수는 중인 방에 수리를 시작하면 부수기 중단
   shoot_grace_time: 10.0            # 시작 후 10초간 사격 불가 (카페에 모인 상태로 무작위 사격 방지)
   share_witness: 1.0                # 인간팀 목격을 함장에게 공유 (balance_v2)
+
+  # 함장 사격 규칙 (captain_rules)
+  shoot_requires_evidence: 1.0      # NPC 함장은 목격 기록(직접 목격/신고)이 있는 대상만 사격 → 무작위 오사 불가
+  shoot_range: 25.0                 # 사격 사거리 (-1 = 시야, 0 = 무제한)
+  captain_bullets: 2.0
