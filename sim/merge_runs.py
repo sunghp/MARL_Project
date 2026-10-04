@@ -30,5 +30,5 @@ with open(os.path.join(out, "games.jsonl"), "w", encoding="utf-8") as f:
 
 for i, d in enumerate((first, cont)):
     for ev in glob.glob(os.path.join(d, "runs", "mappo", "events.*")):
-        shutil.copy(ev, os.path.join(out, "runs", "mappo", f"{i}_" + os.path.basename(ev)))
+        shutil.copy(ev, os.path.join(out, "runs", "mappo", os.path.basename(ev) + f".part{i}"))
 print(f"{out}: {len(g1)} + {len(g2)} games (offset {offset})")
