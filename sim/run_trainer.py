@@ -24,6 +24,7 @@ ap.add_argument("--eval-interval", type=int, default=None)
 ap.add_argument("--eval-episodes", type=int, default=None)
 ap.add_argument("--param", action="append", default=[],
                 help="밸런스 파라미터 덮어쓰기 key=value (environment_parameters), 여러 번 지정 가능")
+ap.add_argument("--entropy-coef", type=float, default=None, help="PPO 엔트로피 계수 덮어쓰기 (기본 CONFIG 0.01)")
 ap.add_argument("--load", default=None, help="이어서 학습할 체크포인트(.pt) 경로 (total_steps, 옵티마이저 상태 포함 복원)")
 ap.add_argument("--curriculum", default=None,
                 help="규칙봇 커리큘럼 bot_team:start:end:decay_steps (예: 1:1.0:0.3:500000)")
@@ -64,6 +65,8 @@ if args.eval_interval:
     cfg["eval_interval"] = args.eval_interval
 if args.eval_episodes:
     cfg["eval_episodes"] = args.eval_episodes
+if args.entropy_coef is not None:
+    cfg["entropy_coef"] = args.entropy_coef
 if args.curriculum:
     team, start, end, decay = args.curriculum.split(":")
     cfg["bot_curriculum"] = {"bot_team": int(team), "start": float(start), "end": float(end),
