@@ -1,0 +1,2040 @@
+{
+ "N": [
+  {
+   "dir": "mergedN4_s0",
+   "train_games": 2932,
+   "bot_train_games": 0,
+   "bot_games_human_win_last20pct": null,
+   "trainer_counted_episodes": 5412,
+   "first_20pct": {
+    "games": 586,
+    "human_win_rate": 0.993,
+    "duration_s": 100.3,
+    "sabotage_per_game": 4.78,
+    "hidden_rate": 0.906,
+    "repairs_per_game": 2.05,
+    "interrupts_per_game": 0.2,
+    "shots_per_game": 0.28,
+    "shot_accuracy": 0.994,
+    "witness_per_game": 0.64,
+    "shot_in_first_5s": 0.0,
+    "reasons": {
+     "목적지 도착": 0.976,
+     "사보타주 전원 처형": 0.017,
+     "방 완전 파괴": 0.007
+    }
+   },
+   "last_20pct": {
+    "games": 586,
+    "human_win_rate": 0.688,
+    "duration_s": 89.0,
+    "sabotage_per_game": 12.31,
+    "hidden_rate": 0.943,
+    "repairs_per_game": 2.88,
+    "interrupts_per_game": 0.53,
+    "shots_per_game": 0.46,
+    "shot_accuracy": 1.0,
+    "witness_per_game": 0.98,
+    "shot_in_first_5s": 0.0,
+    "reasons": {
+     "목적지 도착": 0.614,
+     "방 완전 파괴": 0.312,
+     "사보타주 전원 처형": 0.073
+    }
+   },
+   "eval_blocks": [
+    {
+     "at_decisions": 103136,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.581,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 288350,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.645,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 476087,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.484,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 659963,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 842591,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1026695,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.677,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1210280,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.452,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1390819,
+     "saboteur_vs_bot": 0.032,
+     "human_vs_bot": 0.645,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1573266,
+     "saboteur_vs_bot": 0.129,
+     "human_vs_bot": 0.645,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1755897,
+     "saboteur_vs_bot": 0.065,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1937781,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.452,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 2121028,
+     "saboteur_vs_bot": 0.387,
+     "human_vs_bot": 0.677,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 2297356,
+     "saboteur_vs_bot": 0.226,
+     "human_vs_bot": 0.645,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 2475431,
+     "saboteur_vs_bot": 0.129,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 2658591,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.742,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 2842438,
+     "saboteur_vs_bot": 0.226,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3020891,
+     "saboteur_vs_bot": 0.065,
+     "human_vs_bot": 0.548,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3202587,
+     "saboteur_vs_bot": 0.226,
+     "human_vs_bot": 0.645,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3381273,
+     "saboteur_vs_bot": 0.161,
+     "human_vs_bot": 0.677,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3540689,
+     "saboteur_vs_bot": 0.226,
+     "human_vs_bot": 0.452,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3716828,
+     "saboteur_vs_bot": 0.355,
+     "human_vs_bot": 0.677,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3893555,
+     "saboteur_vs_bot": 0.355,
+     "human_vs_bot": 0.742,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4073776,
+     "saboteur_vs_bot": 0.258,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4251732,
+     "saboteur_vs_bot": 0.194,
+     "human_vs_bot": 0.742,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4433883,
+     "saboteur_vs_bot": 0.29,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4611080,
+     "saboteur_vs_bot": 0.258,
+     "human_vs_bot": 0.387,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4787209,
+     "saboteur_vs_bot": 0.226,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4967163,
+     "saboteur_vs_bot": 0.226,
+     "human_vs_bot": 0.645,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5151557,
+     "saboteur_vs_bot": 0.29,
+     "human_vs_bot": 0.387,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5327909,
+     "saboteur_vs_bot": 0.161,
+     "human_vs_bot": 0.516,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5508165,
+     "saboteur_vs_bot": 0.129,
+     "human_vs_bot": 0.548,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5688679,
+     "saboteur_vs_bot": 0.226,
+     "human_vs_bot": 0.645,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5869276,
+     "saboteur_vs_bot": 0.194,
+     "human_vs_bot": 0.548,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6048247,
+     "saboteur_vs_bot": 0.226,
+     "human_vs_bot": 0.387,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6225777,
+     "saboteur_vs_bot": 0.129,
+     "human_vs_bot": 0.516,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6407529,
+     "saboteur_vs_bot": 0.29,
+     "human_vs_bot": 0.581,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6587471,
+     "saboteur_vs_bot": 0.29,
+     "human_vs_bot": 0.516,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6762109,
+     "saboteur_vs_bot": 0.258,
+     "human_vs_bot": 0.548,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6940936,
+     "saboteur_vs_bot": 0.194,
+     "human_vs_bot": 0.548,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 7120580,
+     "saboteur_vs_bot": 0.065,
+     "human_vs_bot": 0.677,
+     "n_sab": 31,
+     "n_hum": 31
+    }
+   ],
+   "entropy": {
+    "human": {
+     "start": 4.394,
+     "end": 4.189
+    },
+    "saboteur": {
+     "start": 4.394,
+     "end": 3.361
+    },
+    "captain": {
+     "start": 4.394,
+     "end": 3.98
+    }
+   }
+  },
+  {
+   "dir": "mergedN4_s1",
+   "train_games": 2878,
+   "bot_train_games": 0,
+   "bot_games_human_win_last20pct": null,
+   "trainer_counted_episodes": 5358,
+   "first_20pct": {
+    "games": 575,
+    "human_win_rate": 1.0,
+    "duration_s": 100.6,
+    "sabotage_per_game": 4.54,
+    "hidden_rate": 0.895,
+    "repairs_per_game": 1.99,
+    "interrupts_per_game": 0.08,
+    "shots_per_game": 0.29,
+    "shot_accuracy": 0.994,
+    "witness_per_game": 0.62,
+    "shot_in_first_5s": 0.0,
+    "reasons": {
+     "목적지 도착": 0.972,
+     "사보타주 전원 처형": 0.028
+    }
+   },
+   "last_20pct": {
+    "games": 575,
+    "human_win_rate": 0.793,
+    "duration_s": 93.7,
+    "sabotage_per_game": 13.97,
+    "hidden_rate": 0.92,
+    "repairs_per_game": 4.22,
+    "interrupts_per_game": 0.67,
+    "shots_per_game": 0.52,
+    "shot_accuracy": 1.0,
+    "witness_per_game": 1.37,
+    "shot_in_first_5s": 0.0,
+    "reasons": {
+     "목적지 도착": 0.71,
+     "방 완전 파괴": 0.207,
+     "사보타주 전원 처형": 0.083
+    }
+   },
+   "eval_blocks": [
+    {
+     "at_decisions": 101767,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.677,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 283259,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.516,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 465113,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.581,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 649740,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.581,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 834615,
+     "saboteur_vs_bot": 0.065,
+     "human_vs_bot": 0.484,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1017718,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.484,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1199750,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.645,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1382831,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1567573,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.548,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1754749,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.484,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1938764,
+     "saboteur_vs_bot": 0.065,
+     "human_vs_bot": 0.581,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 2121884,
+     "saboteur_vs_bot": 0.097,
+     "human_vs_bot": 0.581,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 2304772,
+     "saboteur_vs_bot": 0.129,
+     "human_vs_bot": 0.71,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 2487751,
+     "saboteur_vs_bot": 0.065,
+     "human_vs_bot": 0.516,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 2671017,
+     "saboteur_vs_bot": 0.129,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 2851614,
+     "saboteur_vs_bot": 0.065,
+     "human_vs_bot": 0.645,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3034757,
+     "saboteur_vs_bot": 0.161,
+     "human_vs_bot": 0.581,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3215622,
+     "saboteur_vs_bot": 0.29,
+     "human_vs_bot": 0.742,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3394636,
+     "saboteur_vs_bot": 0.194,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3542455,
+     "saboteur_vs_bot": 0.129,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3724823,
+     "saboteur_vs_bot": 0.097,
+     "human_vs_bot": 0.581,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3903109,
+     "saboteur_vs_bot": 0.161,
+     "human_vs_bot": 0.71,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4083705,
+     "saboteur_vs_bot": 0.194,
+     "human_vs_bot": 0.548,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4262728,
+     "saboteur_vs_bot": 0.129,
+     "human_vs_bot": 0.419,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4440589,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.516,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4623895,
+     "saboteur_vs_bot": 0.258,
+     "human_vs_bot": 0.387,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4801162,
+     "saboteur_vs_bot": 0.097,
+     "human_vs_bot": 0.645,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4980295,
+     "saboteur_vs_bot": 0.387,
+     "human_vs_bot": 0.581,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5159342,
+     "saboteur_vs_bot": 0.065,
+     "human_vs_bot": 0.484,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5339459,
+     "saboteur_vs_bot": 0.29,
+     "human_vs_bot": 0.71,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5515672,
+     "saboteur_vs_bot": 0.097,
+     "human_vs_bot": 0.581,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5695288,
+     "saboteur_vs_bot": 0.29,
+     "human_vs_bot": 0.419,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5871624,
+     "saboteur_vs_bot": 0.161,
+     "human_vs_bot": 0.581,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6051597,
+     "saboteur_vs_bot": 0.226,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6231061,
+     "saboteur_vs_bot": 0.194,
+     "human_vs_bot": 0.548,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6410784,
+     "saboteur_vs_bot": 0.226,
+     "human_vs_bot": 0.581,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6588705,
+     "saboteur_vs_bot": 0.323,
+     "human_vs_bot": 0.581,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6763933,
+     "saboteur_vs_bot": 0.323,
+     "human_vs_bot": 0.387,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6938667,
+     "saboteur_vs_bot": 0.226,
+     "human_vs_bot": 0.645,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 7114426,
+     "saboteur_vs_bot": 0.323,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    }
+   ],
+   "entropy": {
+    "human": {
+     "start": 4.394,
+     "end": 3.968
+    },
+    "saboteur": {
+     "start": 4.394,
+     "end": 2.218
+    },
+    "captain": {
+     "start": 4.394,
+     "end": 4.231
+    }
+   }
+  }
+ ],
+ "P": [
+  {
+   "dir": "mergedP_s0",
+   "train_games": 2892,
+   "bot_train_games": 0,
+   "bot_games_human_win_last20pct": null,
+   "trainer_counted_episodes": 5372,
+   "first_20pct": {
+    "games": 578,
+    "human_win_rate": 0.993,
+    "duration_s": 100.4,
+    "sabotage_per_game": 4.72,
+    "hidden_rate": 0.905,
+    "repairs_per_game": 2.03,
+    "interrupts_per_game": 0.19,
+    "shots_per_game": 0.28,
+    "shot_accuracy": 0.994,
+    "witness_per_game": 0.63,
+    "shot_in_first_5s": 0.0,
+    "reasons": {
+     "목적지 도착": 0.978,
+     "사보타주 전원 처형": 0.016,
+     "방 완전 파괴": 0.007
+    }
+   },
+   "last_20pct": {
+    "games": 578,
+    "human_win_rate": 0.827,
+    "duration_s": 95.0,
+    "sabotage_per_game": 11.45,
+    "hidden_rate": 0.925,
+    "repairs_per_game": 3.49,
+    "interrupts_per_game": 0.52,
+    "shots_per_game": 0.43,
+    "shot_accuracy": 1.0,
+    "witness_per_game": 1.11,
+    "shot_in_first_5s": 0.0,
+    "reasons": {
+     "목적지 도착": 0.77,
+     "방 완전 파괴": 0.173,
+     "사보타주 전원 처형": 0.057
+    }
+   },
+   "eval_blocks": [
+    {
+     "at_decisions": 103136,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.581,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 288350,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.645,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 476087,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.484,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 659963,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 842591,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1026695,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.677,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1210280,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.452,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1390819,
+     "saboteur_vs_bot": 0.032,
+     "human_vs_bot": 0.645,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1573266,
+     "saboteur_vs_bot": 0.129,
+     "human_vs_bot": 0.645,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1755897,
+     "saboteur_vs_bot": 0.065,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1937781,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.452,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 2121028,
+     "saboteur_vs_bot": 0.387,
+     "human_vs_bot": 0.677,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 2297356,
+     "saboteur_vs_bot": 0.226,
+     "human_vs_bot": 0.645,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 2475431,
+     "saboteur_vs_bot": 0.129,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 2658591,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.742,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 2842438,
+     "saboteur_vs_bot": 0.226,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3020891,
+     "saboteur_vs_bot": 0.065,
+     "human_vs_bot": 0.548,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3202587,
+     "saboteur_vs_bot": 0.226,
+     "human_vs_bot": 0.645,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3381273,
+     "saboteur_vs_bot": 0.161,
+     "human_vs_bot": 0.677,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3540689,
+     "saboteur_vs_bot": 0.226,
+     "human_vs_bot": 0.452,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3716908,
+     "saboteur_vs_bot": 0.355,
+     "human_vs_bot": 0.419,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3892025,
+     "saboteur_vs_bot": 0.032,
+     "human_vs_bot": 0.484,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4078546,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.355,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4260420,
+     "saboteur_vs_bot": 0.129,
+     "human_vs_bot": 0.484,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4441618,
+     "saboteur_vs_bot": 0.032,
+     "human_vs_bot": 0.516,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4626411,
+     "saboteur_vs_bot": 0.065,
+     "human_vs_bot": 0.323,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4808306,
+     "saboteur_vs_bot": 0.194,
+     "human_vs_bot": 0.548,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4988884,
+     "saboteur_vs_bot": 0.161,
+     "human_vs_bot": 0.484,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5168649,
+     "saboteur_vs_bot": 0.29,
+     "human_vs_bot": 0.516,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5341660,
+     "saboteur_vs_bot": 0.258,
+     "human_vs_bot": 0.677,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5520317,
+     "saboteur_vs_bot": 0.129,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5700542,
+     "saboteur_vs_bot": 0.097,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5878748,
+     "saboteur_vs_bot": 0.097,
+     "human_vs_bot": 0.484,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6061151,
+     "saboteur_vs_bot": 0.226,
+     "human_vs_bot": 0.71,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6241682,
+     "saboteur_vs_bot": 0.29,
+     "human_vs_bot": 0.516,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6421134,
+     "saboteur_vs_bot": 0.161,
+     "human_vs_bot": 0.71,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6604221,
+     "saboteur_vs_bot": 0.194,
+     "human_vs_bot": 0.387,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6782076,
+     "saboteur_vs_bot": 0.161,
+     "human_vs_bot": 0.419,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6962127,
+     "saboteur_vs_bot": 0.129,
+     "human_vs_bot": 0.452,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 7138721,
+     "saboteur_vs_bot": 0.129,
+     "human_vs_bot": 0.387,
+     "n_sab": 31,
+     "n_hum": 31
+    }
+   ],
+   "entropy": {
+    "human": {
+     "start": 4.394,
+     "end": 3.859
+    },
+    "saboteur": {
+     "start": 4.394,
+     "end": 2.92
+    },
+    "captain": {
+     "start": 4.394,
+     "end": 4.141
+    }
+   }
+  },
+  {
+   "dir": "mergedP_s1",
+   "train_games": 2892,
+   "bot_train_games": 0,
+   "bot_games_human_win_last20pct": null,
+   "trainer_counted_episodes": 5372,
+   "first_20pct": {
+    "games": 578,
+    "human_win_rate": 1.0,
+    "duration_s": 100.6,
+    "sabotage_per_game": 4.55,
+    "hidden_rate": 0.895,
+    "repairs_per_game": 2.0,
+    "interrupts_per_game": 0.08,
+    "shots_per_game": 0.29,
+    "shot_accuracy": 0.994,
+    "witness_per_game": 0.62,
+    "shot_in_first_5s": 0.0,
+    "reasons": {
+     "목적지 도착": 0.972,
+     "사보타주 전원 처형": 0.028
+    }
+   },
+   "last_20pct": {
+    "games": 578,
+    "human_win_rate": 0.585,
+    "duration_s": 86.3,
+    "sabotage_per_game": 17.1,
+    "hidden_rate": 0.947,
+    "repairs_per_game": 3.82,
+    "interrupts_per_game": 0.91,
+    "shots_per_game": 0.43,
+    "shot_accuracy": 1.0,
+    "witness_per_game": 1.09,
+    "shot_in_first_5s": 0.0,
+    "reasons": {
+     "목적지 도착": 0.528,
+     "방 완전 파괴": 0.415,
+     "사보타주 전원 처형": 0.057
+    }
+   },
+   "eval_blocks": [
+    {
+     "at_decisions": 101767,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.677,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 283259,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.516,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 465113,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.581,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 649740,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.581,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 834615,
+     "saboteur_vs_bot": 0.065,
+     "human_vs_bot": 0.484,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1017718,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.484,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1199750,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.645,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1382831,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1567573,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.548,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1754749,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.484,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1938764,
+     "saboteur_vs_bot": 0.065,
+     "human_vs_bot": 0.581,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 2121884,
+     "saboteur_vs_bot": 0.097,
+     "human_vs_bot": 0.581,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 2304772,
+     "saboteur_vs_bot": 0.129,
+     "human_vs_bot": 0.71,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 2487751,
+     "saboteur_vs_bot": 0.065,
+     "human_vs_bot": 0.516,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 2671017,
+     "saboteur_vs_bot": 0.129,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 2851614,
+     "saboteur_vs_bot": 0.065,
+     "human_vs_bot": 0.645,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3034757,
+     "saboteur_vs_bot": 0.161,
+     "human_vs_bot": 0.581,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3215622,
+     "saboteur_vs_bot": 0.29,
+     "human_vs_bot": 0.742,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3394636,
+     "saboteur_vs_bot": 0.194,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3542455,
+     "saboteur_vs_bot": 0.129,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3723086,
+     "saboteur_vs_bot": 0.161,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3904216,
+     "saboteur_vs_bot": 0.323,
+     "human_vs_bot": 0.484,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4079258,
+     "saboteur_vs_bot": 0.161,
+     "human_vs_bot": 0.71,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4260124,
+     "saboteur_vs_bot": 0.161,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4439906,
+     "saboteur_vs_bot": 0.29,
+     "human_vs_bot": 0.516,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4616609,
+     "saboteur_vs_bot": 0.161,
+     "human_vs_bot": 0.516,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4794266,
+     "saboteur_vs_bot": 0.032,
+     "human_vs_bot": 0.581,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4976072,
+     "saboteur_vs_bot": 0.065,
+     "human_vs_bot": 0.29,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5154018,
+     "saboteur_vs_bot": 0.032,
+     "human_vs_bot": 0.452,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5336341,
+     "saboteur_vs_bot": 0.097,
+     "human_vs_bot": 0.581,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5514897,
+     "saboteur_vs_bot": 0.226,
+     "human_vs_bot": 0.548,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5692426,
+     "saboteur_vs_bot": 0.419,
+     "human_vs_bot": 0.419,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5866613,
+     "saboteur_vs_bot": 0.258,
+     "human_vs_bot": 0.677,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6042171,
+     "saboteur_vs_bot": 0.194,
+     "human_vs_bot": 0.548,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6218421,
+     "saboteur_vs_bot": 0.032,
+     "human_vs_bot": 0.645,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6400862,
+     "saboteur_vs_bot": 0.097,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6581793,
+     "saboteur_vs_bot": 0.032,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6765082,
+     "saboteur_vs_bot": 0.323,
+     "human_vs_bot": 0.355,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6941190,
+     "saboteur_vs_bot": 0.355,
+     "human_vs_bot": 0.645,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 7114998,
+     "saboteur_vs_bot": 0.516,
+     "human_vs_bot": 0.581,
+     "n_sab": 31,
+     "n_hum": 31
+    }
+   ],
+   "entropy": {
+    "human": {
+     "start": 4.394,
+     "end": 4.159
+    },
+    "saboteur": {
+     "start": 4.394,
+     "end": 2.273
+    },
+    "captain": {
+     "start": 4.394,
+     "end": 4.113
+    }
+   }
+  }
+ ],
+ "Q": [
+  {
+   "dir": "mergedQ_s0",
+   "train_games": 3148,
+   "bot_train_games": 0,
+   "bot_games_human_win_last20pct": null,
+   "trainer_counted_episodes": 5628,
+   "first_20pct": {
+    "games": 629,
+    "human_win_rate": 0.992,
+    "duration_s": 100.3,
+    "sabotage_per_game": 5.03,
+    "hidden_rate": 0.908,
+    "repairs_per_game": 2.14,
+    "interrupts_per_game": 0.24,
+    "shots_per_game": 0.29,
+    "shot_accuracy": 0.994,
+    "witness_per_game": 0.66,
+    "shot_in_first_5s": 0.0,
+    "reasons": {
+     "목적지 도착": 0.973,
+     "사보타주 전원 처형": 0.019,
+     "방 완전 파괴": 0.008
+    }
+   },
+   "last_20pct": {
+    "games": 629,
+    "human_win_rate": 0.509,
+    "duration_s": 78.9,
+    "sabotage_per_game": 18.04,
+    "hidden_rate": 0.908,
+    "repairs_per_game": 3.92,
+    "interrupts_per_game": 1.68,
+    "shots_per_game": 0.5,
+    "shot_accuracy": 1.0,
+    "witness_per_game": 1.52,
+    "shot_in_first_5s": 0.0,
+    "reasons": {
+     "방 완전 파괴": 0.491,
+     "목적지 도착": 0.407,
+     "사보타주 전원 처형": 0.102
+    }
+   },
+   "eval_blocks": [
+    {
+     "at_decisions": 103136,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.581,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 288350,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.645,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 476087,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.484,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 659963,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 842591,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1026695,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.677,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1210280,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.452,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1390819,
+     "saboteur_vs_bot": 0.032,
+     "human_vs_bot": 0.645,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1573266,
+     "saboteur_vs_bot": 0.129,
+     "human_vs_bot": 0.645,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1755897,
+     "saboteur_vs_bot": 0.065,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1937781,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.452,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 2121028,
+     "saboteur_vs_bot": 0.387,
+     "human_vs_bot": 0.677,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 2297356,
+     "saboteur_vs_bot": 0.226,
+     "human_vs_bot": 0.645,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 2475431,
+     "saboteur_vs_bot": 0.129,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 2658591,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.742,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 2842438,
+     "saboteur_vs_bot": 0.226,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3020891,
+     "saboteur_vs_bot": 0.065,
+     "human_vs_bot": 0.548,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3202587,
+     "saboteur_vs_bot": 0.226,
+     "human_vs_bot": 0.645,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3381273,
+     "saboteur_vs_bot": 0.161,
+     "human_vs_bot": 0.677,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3540689,
+     "saboteur_vs_bot": 0.226,
+     "human_vs_bot": 0.452,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3717081,
+     "saboteur_vs_bot": 0.226,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3893734,
+     "saboteur_vs_bot": 0.194,
+     "human_vs_bot": 0.387,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4068951,
+     "saboteur_vs_bot": 0.258,
+     "human_vs_bot": 0.581,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4243842,
+     "saboteur_vs_bot": 0.548,
+     "human_vs_bot": 0.548,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4414292,
+     "saboteur_vs_bot": 0.387,
+     "human_vs_bot": 0.484,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4588306,
+     "saboteur_vs_bot": 0.387,
+     "human_vs_bot": 0.645,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4759497,
+     "saboteur_vs_bot": 0.484,
+     "human_vs_bot": 0.419,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4927861,
+     "saboteur_vs_bot": 0.516,
+     "human_vs_bot": 0.484,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5099545,
+     "saboteur_vs_bot": 0.452,
+     "human_vs_bot": 0.484,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5273650,
+     "saboteur_vs_bot": 0.548,
+     "human_vs_bot": 0.516,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5442832,
+     "saboteur_vs_bot": 0.484,
+     "human_vs_bot": 0.419,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5614707,
+     "saboteur_vs_bot": 0.516,
+     "human_vs_bot": 0.452,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5785039,
+     "saboteur_vs_bot": 0.516,
+     "human_vs_bot": 0.516,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5955373,
+     "saboteur_vs_bot": 0.516,
+     "human_vs_bot": 0.742,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6129816,
+     "saboteur_vs_bot": 0.419,
+     "human_vs_bot": 0.419,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6300879,
+     "saboteur_vs_bot": 0.419,
+     "human_vs_bot": 0.355,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6468254,
+     "saboteur_vs_bot": 0.548,
+     "human_vs_bot": 0.516,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6638880,
+     "saboteur_vs_bot": 0.258,
+     "human_vs_bot": 0.29,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6813295,
+     "saboteur_vs_bot": 0.29,
+     "human_vs_bot": 0.258,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6988149,
+     "saboteur_vs_bot": 0.258,
+     "human_vs_bot": 0.226,
+     "n_sab": 31,
+     "n_hum": 31
+    }
+   ],
+   "entropy": {
+    "human": {
+     "start": 4.394,
+     "end": 2.239
+    },
+    "saboteur": {
+     "start": 4.394,
+     "end": 1.891
+    },
+    "captain": {
+     "start": 4.394,
+     "end": 4.124
+    }
+   }
+  },
+  {
+   "dir": "mergedQ_s1",
+   "train_games": 3171,
+   "bot_train_games": 0,
+   "bot_games_human_win_last20pct": null,
+   "trainer_counted_episodes": 5651,
+   "first_20pct": {
+    "games": 634,
+    "human_win_rate": 0.995,
+    "duration_s": 100.5,
+    "sabotage_per_game": 4.85,
+    "hidden_rate": 0.897,
+    "repairs_per_game": 2.07,
+    "interrupts_per_game": 0.1,
+    "shots_per_game": 0.29,
+    "shot_accuracy": 0.995,
+    "witness_per_game": 0.66,
+    "shot_in_first_5s": 0.0,
+    "reasons": {
+     "목적지 도착": 0.965,
+     "사보타주 전원 처형": 0.03,
+     "방 완전 파괴": 0.005
+    }
+   },
+   "last_20pct": {
+    "games": 634,
+    "human_win_rate": 0.306,
+    "duration_s": 70.3,
+    "sabotage_per_game": 19.9,
+    "hidden_rate": 0.96,
+    "repairs_per_game": 2.67,
+    "interrupts_per_game": 1.19,
+    "shots_per_game": 0.48,
+    "shot_accuracy": 1.0,
+    "witness_per_game": 1.0,
+    "shot_in_first_5s": 0.0,
+    "reasons": {
+     "방 완전 파괴": 0.694,
+     "목적지 도착": 0.21,
+     "사보타주 전원 처형": 0.096
+    }
+   },
+   "eval_blocks": [
+    {
+     "at_decisions": 101767,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.677,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 283259,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.516,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 465113,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.581,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 649740,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.581,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 834615,
+     "saboteur_vs_bot": 0.065,
+     "human_vs_bot": 0.484,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1017718,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.484,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1199750,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.645,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1382831,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1567573,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.548,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1754749,
+     "saboteur_vs_bot": 0.0,
+     "human_vs_bot": 0.484,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 1938764,
+     "saboteur_vs_bot": 0.065,
+     "human_vs_bot": 0.581,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 2121884,
+     "saboteur_vs_bot": 0.097,
+     "human_vs_bot": 0.581,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 2304772,
+     "saboteur_vs_bot": 0.129,
+     "human_vs_bot": 0.71,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 2487751,
+     "saboteur_vs_bot": 0.065,
+     "human_vs_bot": 0.516,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 2671017,
+     "saboteur_vs_bot": 0.129,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 2851614,
+     "saboteur_vs_bot": 0.065,
+     "human_vs_bot": 0.645,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3034757,
+     "saboteur_vs_bot": 0.161,
+     "human_vs_bot": 0.581,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3215622,
+     "saboteur_vs_bot": 0.29,
+     "human_vs_bot": 0.742,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3394636,
+     "saboteur_vs_bot": 0.194,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3542455,
+     "saboteur_vs_bot": 0.129,
+     "human_vs_bot": 0.613,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3723701,
+     "saboteur_vs_bot": 0.29,
+     "human_vs_bot": 0.484,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 3902311,
+     "saboteur_vs_bot": 0.194,
+     "human_vs_bot": 0.419,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4082594,
+     "saboteur_vs_bot": 0.29,
+     "human_vs_bot": 0.452,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4259087,
+     "saboteur_vs_bot": 0.161,
+     "human_vs_bot": 0.484,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4439220,
+     "saboteur_vs_bot": 0.29,
+     "human_vs_bot": 0.452,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4611372,
+     "saboteur_vs_bot": 0.129,
+     "human_vs_bot": 0.484,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4787895,
+     "saboteur_vs_bot": 0.323,
+     "human_vs_bot": 0.387,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 4962452,
+     "saboteur_vs_bot": 0.387,
+     "human_vs_bot": 0.419,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5135959,
+     "saboteur_vs_bot": 0.613,
+     "human_vs_bot": 0.548,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5301512,
+     "saboteur_vs_bot": 0.484,
+     "human_vs_bot": 0.419,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5469656,
+     "saboteur_vs_bot": 0.323,
+     "human_vs_bot": 0.516,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5644422,
+     "saboteur_vs_bot": 0.29,
+     "human_vs_bot": 0.419,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5816363,
+     "saboteur_vs_bot": 0.677,
+     "human_vs_bot": 0.387,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 5981483,
+     "saboteur_vs_bot": 0.548,
+     "human_vs_bot": 0.323,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6148093,
+     "saboteur_vs_bot": 0.645,
+     "human_vs_bot": 0.516,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6317671,
+     "saboteur_vs_bot": 0.516,
+     "human_vs_bot": 0.452,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6488208,
+     "saboteur_vs_bot": 0.387,
+     "human_vs_bot": 0.516,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6660869,
+     "saboteur_vs_bot": 0.516,
+     "human_vs_bot": 0.548,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6830906,
+     "saboteur_vs_bot": 0.677,
+     "human_vs_bot": 0.419,
+     "n_sab": 31,
+     "n_hum": 31
+    },
+    {
+     "at_decisions": 6992456,
+     "saboteur_vs_bot": 0.645,
+     "human_vs_bot": 0.581,
+     "n_sab": 31,
+     "n_hum": 31
+    }
+   ],
+   "entropy": {
+    "human": {
+     "start": 4.394,
+     "end": 3.265
+    },
+    "saboteur": {
+     "start": 4.394,
+     "end": 0.73
+    },
+    "captain": {
+     "start": 4.394,
+     "end": 3.97
+    }
+   }
+  }
+ ]
+}
