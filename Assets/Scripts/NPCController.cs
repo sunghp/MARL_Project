@@ -788,12 +788,14 @@ public class NPCController : MonoBehaviour
         interactionTimer = 0f;
         currentInteractionPoint = null;
 
-        // NavMeshAgent 정지
+        // NavMeshAgent 정지 + 이동 속도 재적용 (env param move_speed가 Start 이후에 바뀌어도 반영)
         if (agent != null)
         {
             agent.isStopped = false;
             agent.ResetPath();
             agent.velocity = Vector3.zero;
+            if (GameManager.Instance != null)
+                agent.speed = GameManager.Instance.moveSpeed;
         }
 
 #if UNITY_EDITOR

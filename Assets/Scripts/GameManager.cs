@@ -92,7 +92,7 @@ public class GameManager : MonoBehaviour
     public float sabotageTime = 3f;
 
     [Tooltip("부수기 시 감소량")]
-    public float sabotageDamage = 10f;
+    public float sabotageDamage = 7f;   // 10 → 7 (sim/results/balance_v4)
 
     [Tooltip("고치기 시간 (초)")]
     public float repairTime = 5f;
