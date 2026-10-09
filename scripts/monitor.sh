@@ -6,4 +6,4 @@ echo "=== TensorBoard ==="
 echo "http://localhost:6006"
 echo "===================="
 
-tensorboard --logdir=results --port=6006
+tensorboard --logdir=runs/mappo --port=6006

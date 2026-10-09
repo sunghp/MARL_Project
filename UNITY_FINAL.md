@@ -76,7 +76,7 @@ python spectate.py --checkpoint <체크포인트.pt> --env-path <빌드 경로>
 - 행동은 기본적으로 학습 때와 같은 확률적 샘플링이다. `--deterministic`을 주면 argmax를 쓴다. 인간·함장 정책은 거의 균등분포라 argmax는 학습 때와 다르게 보일 수 있다.
 - 제대로 된 결과물은 아래 "학습"으로 Unity 빌드에서 직접 학습한 체크포인트를 같은 방법으로 관전하는 것이다.
 
-## 학습
+## 학습 (단계별 안내: `TRAINING_GUIDE.md`)
 
 ```bash
 pip install torch numpy pyyaml tensorboard mlagents-envs

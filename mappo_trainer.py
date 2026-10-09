@@ -1056,6 +1056,8 @@ if __name__ == "__main__":
     parser.add_argument("--env-path", type=str, default=None, help="Unity 빌드 경로")
     parser.add_argument("--time-scale", type=float, default=None, help="게임 속도 배율")
     parser.add_argument("--graphics", action="store_true", help="화면 표시 (디버그용)")
+    parser.add_argument("--editor", action="store_true",
+                        help="빌드 대신 Unity 에디터에 연결 (실행 후 에디터에서 Play, 짧은 시험용)")
     args = parser.parse_args()
 
     # 커맨드라인 인자로 설정 덮어쓰기
@@ -1063,6 +1065,9 @@ if __name__ == "__main__":
         CONFIG["total_timesteps"] = args.timesteps
     if args.env_path:
         CONFIG["env_path"] = args.env_path
+    if args.editor:
+        CONFIG["env_path"] = None     # mlagents_envs: file_name=None → 에디터 Play 대기 (포트 5004)
+        CONFIG["no_graphics"] = False
     if args.time_scale:
         CONFIG["time_scale"] = args.time_scale
     if args.graphics:

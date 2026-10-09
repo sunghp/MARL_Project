@@ -1,0 +1,11 @@
+# Python 3.9 ~ 3.11 권장 (예: conda create -n marl python=3.10)
+# Unity 패키지 com.unity.ml-agents 2.0.2 (통신 API 1.5.0) ↔ mlagents-envs 0.28.0
+mlagents-envs==0.28.0
+# mlagents-envs 0.28은 np.bool(1.24에서 제거)과 구식 protobuf 코드를 쓴다 → 아래 버전 고정 필요
+numpy==1.23.5
+protobuf==3.20.3
+torch
+pyyaml
+tensorboard
+# 시뮬레이터 결과 그림(sim/analyze.py)용
+matplotlib
