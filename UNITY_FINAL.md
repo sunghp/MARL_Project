@@ -50,6 +50,32 @@
 - NPC 6명(Tag `NPC`), NavMeshSurface, 방 8개에 `InteractionPoint`(roomIndex 0~7), GameManager의 `cafeSpawnPoint`
 - 학습 중(Python 연결 시) Player는 자동으로 제외된다(`includePlayerInTraining`)
 
+## 그냥 Play를 누르면? → 학습된 정책이 아니다
+
+- 트레이너(Python)가 연결되지 않고 NPC의 `Behavior Parameters`에 ONNX 모델도 없으면, ML-Agents는 `NPCAgent.Heuristic()`으로 대신 움직인다.
+  - 기본 행동은 "대기 + 없음"이라 **NPC들이 거의 움직이지 않는다.**
+  - 키보드 1~8(방 선택), Q(부수기), E(수리), F(사격)를 누르면 **NPC 전원이 같은 행동**을 한다.
+- 이 경우 Player도 게임에 포함된다(학습 중에만 자동 제외).
+- 이 프로젝트의 트레이너는 PyTorch(`.pt`)로 저장한다. Unity에 바로 넣을 ONNX 모델은 만들지 않는다.
+
+### 학습된 정책을 Unity에서 보는 방법: `spectate.py`
+
+Python이 정책을 계산하고 Unity는 화면만 보여 준다. ONNX 변환이 필요 없다.
+
+```bash
+# 에디터로 보기: 아래를 실행한 뒤 Unity 에디터에서 Play
+python spectate.py --checkpoint models/sim_balance_v4_4M_seed2.pt --editor
+
+# 빌드로 보기
+python spectate.py --checkpoint <체크포인트.pt> --env-path <빌드 경로>
+```
+
+- `models/sim_balance_v4_4M_seed2.pt`: **가상 환경에서** 4M 스텝 학습한 모델(시드 2)이다. 관측·행동 규격이 Unity와 같아서 그대로 붙는다. 하지만 Unity에서 학습한 것은 아니다.
+  - NavMesh 경로와 규칙 차이 때문에 시뮬레이터만큼 잘 움직인다는 보장은 없다.
+  - 대신 "시뮬레이터 결과가 Unity로 옮겨지는가"를 학습 없이 바로 확인하는 첫 테스트로 쓸 수 있다.
+- 행동은 기본적으로 학습 때와 같은 확률적 샘플링이다. `--deterministic`을 주면 argmax를 쓴다. 인간·함장 정책은 거의 균등분포라 argmax는 학습 때와 다르게 보일 수 있다.
+- 제대로 된 결과물은 아래 "학습"으로 Unity 빌드에서 직접 학습한 체크포인트를 같은 방법으로 관전하는 것이다.
+
 ## 학습
 
 ```bash

@@ -6,6 +6,7 @@ spectate.py - 학습된 정책 관전 모드
 
 사용법:
     python spectate.py --checkpoint checkpoints/mappo_ep800.pt
+    python spectate.py --checkpoint models/sim_balance_v4_4M_seed2.pt --editor   # 에디터에서 Play
     python spectate.py --checkpoint checkpoints/mappo_ep800.pt --time-scale 1.0 --episodes 5
 
 포트폴리오 영상용:
@@ -48,8 +49,12 @@ def deterministic_action(actor, obs_tensor):
     return torch.stack(actions, dim=-1)              # (batch, 브랜치수)
 
 
-def spectate(checkpoint_path, time_scale=1.0, episodes=5, stochastic=False):
+def spectate(checkpoint_path, time_scale=1.0, episodes=5, stochastic=True, env_path="", editor=False):
     config = dict(CONFIG)
+    if editor:
+        config["env_path"] = None        # None = Unity 에디터에 연결 (실행 후 에디터에서 Play)
+    elif env_path:
+        config["env_path"] = env_path
     config["no_graphics"] = False        # 화면 켜기
     config["time_scale"] = time_scale    # 정상 속도 (기본 1.0)
 
@@ -65,10 +70,13 @@ def spectate(checkpoint_path, time_scale=1.0, episodes=5, stochastic=False):
     engine_channel = EngineConfigurationChannel()
     param_channel = EnvironmentParametersChannel()
 
+    if config["env_path"] is None:
+        print("[대기] Unity 에디터에서 Play를 누르세요...")
     env = UnityEnvironment(
         file_name=config["env_path"],
         side_channels=[engine_channel, param_channel],
-        base_port=5006,                  # 학습(5004)과 겹치지 않게 다른 포트
+        # 에디터는 항상 5004 포트로 접속한다. 빌드 실행 시에는 학습(5004)과 겹치지 않게 5006
+        base_port=5004 if config["env_path"] is None else 5006,
         timeout_wait=120,
         no_graphics=False,
     )
@@ -86,20 +94,25 @@ def spectate(checkpoint_path, time_scale=1.0, episodes=5, stochastic=False):
 
     agent_roles = {}
     agent_teams = {}
+    terminated = set()
     ep_done = 0
 
     try:
         while ep_done < episodes:
             decision_steps, terminal_steps = env.get_steps(behavior_name)
 
-            # 종료 감지 (한 에피소드 끝)
-            if len(decision_steps) == 0 and len(terminal_steps) > 0:
+            # 종료 감지: 트레이너와 같은 규칙.
+            # 누가 죽으면 decision 없이 terminal만 오는데, 그건 게임 종료가 아니다.
+            # 게임이 끝나면 등록된 에이전트 전원이 terminal을 받는다(Unity가 스스로 다음 게임으로 리셋).
+            for agent_id in terminal_steps.agent_id:
+                if int(agent_id) in agent_roles:
+                    terminated.add(int(agent_id))
+            if agent_roles and set(agent_roles).issubset(terminated):
                 ep_done += 1
                 print(f"[에피소드 {ep_done}/{episodes} 종료]")
                 agent_roles.clear()
                 agent_teams.clear()
-                env.reset()
-                continue
+                terminated.clear()
 
             if len(decision_steps) == 0:
                 env.step()
@@ -152,7 +165,11 @@ if __name__ == "__main__":
     parser.add_argument("--checkpoint", required=True, help="불러올 체크포인트 .pt 경로")
     parser.add_argument("--time-scale", type=float, default=1.0, help="게임 속도 (1.0 = 정상)")
     parser.add_argument("--episodes", type=int, default=5, help="관전할 에피소드 수")
-    parser.add_argument("--stochastic", action="store_true", help="argmax 대신 확률적 행동")
+    parser.add_argument("--deterministic", action="store_true",
+                        help="확률적 샘플링 대신 argmax 행동 (기본은 학습 때와 같은 확률적 행동)")
+    parser.add_argument("--editor", action="store_true", help="빌드 대신 Unity 에디터에 연결 (실행 후 에디터에서 Play)")
+    parser.add_argument("--env-path", default="", help="Unity 빌드 경로 (기본: CONFIG의 env_path)")
     args = parser.parse_args()
 
-    spectate(args.checkpoint, args.time_scale, args.episodes, args.stochastic)
+    spectate(args.checkpoint, args.time_scale, args.episodes, not args.deterministic,
+             args.env_path, args.editor)
