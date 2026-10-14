@@ -1,0 +1,12 @@
+== bot_level 0 (이전 밸런스 N)
+random   {"sab_win": 0.0, "dur": 100.26, "sab": 1.02, "hidden": 0.94, "rep": 0.46, "cut": 0.08, "shots": 0.08, "hit": 1.0, "reasons": {"목적지 도착": 200}}
+camper   {"sab_win": 0.56, "dur": 82.04, "sab": 18.04, "hidden": 16.71, "rep": 2.68, "cut": 1.79, "shots": 0.62, "hit": 1.0, "reasons": {"방 파괴": 112, "목적지 도착": 65, "모든 사보타주 제거": 23}}
+focus    {"sab_win": 0.185, "dur": 87.04, "sab": 12.21, "hidden": 11.01, "rep": 1.74, "cut": 1.73, "shots": 0.9, "hit": 1.0, "reasons": {"목적지 도착": 86, "모든 사보타주 제거": 77, "방 파괴": 37}}
+evasive  {"sab_win": 0.395, "dur": 87.83, "sab": 18.94, "hidden": 18.15, "rep": 3.06, "cut": 0.28, "shots": 0.41, "hit": 1.0, "reasons": {"목적지 도착": 109, "방 파괴": 79, "모든 사보타주 제거": 12}}
+rulebot  {"sab_win": 0.25, "dur": 91.73, "sab": 25.34, "hidden": 24.38, "rep": 7.8, "cut": 1.08, "shots": 0.94, "hit": 1.0, "reasons": {"목적지 도착": 109, "방 파괴": 50, "모든 사보타주 제거": 41}}
+== bot_level 1 (이전 밸런스 N)
+random   {"sab_win": 0.0, "dur": 100.1, "sab": 1.04, "hidden": 0.9, "rep": 0.67, "cut": 0.01, "shots": 0.13, "hit": 1.0, "reasons": {"목적지 도착": 198, "모든 사보타주 제거": 2}}
+camper   {"sab_win": 0.09, "dur": 90.63, "sab": 16.89, "hidden": 14.95, "rep": 5.04, "cut": 3.44, "shots": 1.51, "hit": 1.0, "reasons": {"모든 사보타주 제거": 107, "목적지 도착": 75, "방 파괴": 18}}
+focus    {"sab_win": 0.0, "dur": 80.59, "sab": 8.56, "hidden": 7.19, "rep": 2.64, "cut": 2.25, "shots": 1.62, "hit": 1.0, "reasons": {"모든 사보타주 제거": 150, "목적지 도착": 50}}
+evasive  {"sab_win": 0.08, "dur": 96.01, "sab": 16.45, "hidden": 15.29, "rep": 4.94, "cut": 0.51, "shots": 1.2, "hit": 1.0, "reasons": {"목적지 도착": 121, "모든 사보타주 제거": 63, "방 파괴": 16}}
+rulebot  {"sab_win": 0.155, "dur": 70.01, "sab": 22.46, "hidden": 20.88, "rep": 7.0, "cut": 0.57, "shots": 1.75, "hit": 1.0, "reasons": {"모든 사보타주 제거": 150, "방 파괴": 31, "목적지 도착": 19}}

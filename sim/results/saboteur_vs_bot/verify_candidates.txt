@@ -1,0 +1,15 @@
+A random {"sab_win": 0.0, "dur": 100.25, "sab": 1.25, "hidden": 0.98, "rep": 0.95, "cut": 0.01, "shots": 0.2, "hit": 1.0, "reasons": {"목적지 도착": 200}}
+A camper {"sab_win": 0.22, "dur": 88.86, "sab": 16.25, "hidden": 14.32, "rep": 4.85, "cut": 3.48, "shots": 1.22, "hit": 1.0, "reasons": {"목적지 도착": 88, "모든 사보타주 제거": 68, "방 파괴": 44}}
+A focus {"sab_win": 0.065, "dur": 79.2, "sab": 8.95, "hidden": 7.51, "rep": 3.14, "cut": 2.52, "shots": 1.49, "hit": 1.0, "reasons": {"모든 사보타주 제거": 136, "목적지 도착": 51, "방 파괴": 13}}
+A evasive {"sab_win": 0.19, "dur": 93.45, "sab": 15.06, "hidden": 13.83, "rep": 5.0, "cut": 0.46, "shots": 0.93, "hit": 1.0, "reasons": {"목적지 도착": 128, "방 파괴": 38, "모든 사보타주 제거": 34}}
+A rulebot {"sab_win": 0.43, "dur": 75.88, "sab": 24.52, "hidden": 22.56, "rep": 8.12, "cut": 0.79, "shots": 1.27, "hit": 1.0, "reasons": {"방 파괴": 86, "모든 사보타주 제거": 77, "목적지 도착": 37}}
+B random {"sab_win": 0.0, "dur": 100.2, "sab": 1.0, "hidden": 0.8, "rep": 0.68, "cut": 0.01, "shots": 0.15, "hit": 1.0, "reasons": {"목적지 도착": 200}}
+B camper {"sab_win": 0.18, "dur": 91.13, "sab": 16.43, "hidden": 14.64, "rep": 5.31, "cut": 3.83, "shots": 1.28, "hit": 1.0, "reasons": {"목적지 도착": 91, "모든 사보타주 제거": 73, "방 파괴": 36}}
+B focus {"sab_win": 0.075, "dur": 82.02, "sab": 9.32, "hidden": 8.04, "rep": 3.19, "cut": 2.46, "shots": 1.42, "hit": 1.0, "reasons": {"모든 사보타주 제거": 127, "목적지 도착": 58, "방 파괴": 15}}
+B evasive {"sab_win": 0.145, "dur": 94.14, "sab": 15.06, "hidden": 13.88, "rep": 5.02, "cut": 0.56, "shots": 1.02, "hit": 1.0, "reasons": {"목적지 도착": 121, "모든 사보타주 제거": 50, "방 파괴": 29}}
+B rulebot {"sab_win": 0.375, "dur": 78.53, "sab": 24.64, "hidden": 22.98, "rep": 8.65, "cut": 1.13, "shots": 1.36, "hit": 1.0, "reasons": {"모든 사보타주 제거": 85, "방 파괴": 75, "목적지 도착": 40}}
+C random {"sab_win": 0.0, "dur": 100.07, "sab": 1.08, "hidden": 0.87, "rep": 0.71, "cut": 0.01, "shots": 0.16, "hit": 1.0, "reasons": {"목적지 도착": 199, "모든 사보타주 제거": 1}}
+C camper {"sab_win": 0.295, "dur": 86.23, "sab": 15.71, "hidden": 14.18, "rep": 5.03, "cut": 3.58, "shots": 1.19, "hit": 1.0, "reasons": {"목적지 도착": 72, "모든 사보타주 제거": 69, "방 파괴": 59}}
+C focus {"sab_win": 0.08, "dur": 80.69, "sab": 9.16, "hidden": 7.95, "rep": 3.35, "cut": 2.48, "shots": 1.46, "hit": 1.0, "reasons": {"모든 사보타주 제거": 133, "목적지 도착": 51, "방 파괴": 16}}
+C evasive {"sab_win": 0.275, "dur": 85.6, "sab": 14.59, "hidden": 13.57, "rep": 4.76, "cut": 0.67, "shots": 0.97, "hit": 1.0, "reasons": {"목적지 도착": 95, "방 파괴": 55, "모든 사보타주 제거": 50}}
+C rulebot {"sab_win": 0.445, "dur": 73.17, "sab": 23.13, "hidden": 21.66, "rep": 7.74, "cut": 1.14, "shots": 1.26, "hit": 1.0, "reasons": {"방 파괴": 89, "모든 사보타주 제거": 70, "목적지 도착": 41}}

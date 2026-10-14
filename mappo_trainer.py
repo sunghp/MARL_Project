@@ -62,6 +62,7 @@ CONFIG = {
     "gae_lambda": 0.95,           # GAE lambda
     "clip_epsilon": 0.2,          # PPO 클리핑
     "entropy_coef": 0.01,         # 엔트로피 보너스 (탐색 장려)
+    "entropy_coef_by_role": {},   # 역할별 덮어쓰기. 예: {"saboteur": 0.003}
     "value_coef": 0.5,            # 가치 손실 가중치
     "max_grad_norm": 0.5,         # 그래디언트 클리핑
 
@@ -91,6 +92,8 @@ CONFIG = {
     # 규칙봇 쪽 에이전트의 데이터는 학습에서 제외한다. 봇 게임 비율은 start → end로 decay_steps 동안 선형 감소.
     # 켜져 있으면 에피소드 중간 업데이트는 하지 않는다(그 게임이 봇 게임인지는 종료 시점에 Unity가 알려줌).
     "bot_curriculum": None,       # 예: {"bot_team": 1, "start": 1.0, "end": 0.3, "decay_steps": 500_000}
+    # 커리큘럼이 없으면 yaml의 bot_team(1 또는 2)이 "고정 봇 팀"이 된다: 그 팀은 항상 규칙봇이고
+    # 데이터를 모으지 않는다. bot_team 2 = 인간팀 고정 → 사보타주만 학습.
 }
 
 
@@ -372,6 +375,7 @@ class MAPPOTrainer:
         self.eval_frozen = 0        # 현재 고정 팀 (2=인간고정→사보타주측정, 1=사보타주고정→인간측정)
         self.eval_ep_count = 0      # 현재 매치업에서 집계된 평가 에피소드 수
         self.next_eval_step = self.config["eval_interval"]  # 다음 평가 트리거 스텝
+        self.fixed_bot_team = 0     # yaml bot_team (커리큘럼 없을 때): 항상 규칙봇인 팀
 
         # --- TensorBoard ---
         self.writer = SummaryWriter(config["log_dir"])
@@ -556,7 +560,8 @@ class MAPPOTrainer:
                     entropy_loss = -entropy.mean()
 
                     # 총 손실
-                    loss = actor_loss + config["entropy_coef"] * entropy_loss
+                    ent_coef = (config.get("entropy_coef_by_role") or {}).get(role, config["entropy_coef"])
+                    loss = actor_loss + ent_coef * entropy_loss
 
                     optimizer.zero_grad()
                     loss.backward()
@@ -675,6 +680,8 @@ class MAPPOTrainer:
         """다음 게임을 규칙봇 상대로 할지 정해서 Unity에 전달 (Unity는 다음 리셋 때 읽음)"""
         cur = self.config.get("bot_curriculum")
         if not cur:
+            if self.fixed_bot_team:
+                param_channel.set_float_parameter("bot_team", float(self.fixed_bot_team))
             return
         team = cur["bot_team"] if np.random.random() < self.bot_game_prob() else 0
         param_channel.set_float_parameter("bot_team", float(team))
@@ -709,6 +716,11 @@ class MAPPOTrainer:
             print(f"[밸런스] {balance_path}에서 {len(env_params)}개 파라미터 로드")
         else:
             print(f"[밸런스] yaml을 찾지 못함({balance_path}) → Unity Inspector 기본값 사용")
+        if not config.get("bot_curriculum"):
+            self.fixed_bot_team = int(float(env_params.get("bot_team", 0)))
+            if self.fixed_bot_team:
+                side = {1: "사보타주 팀", 2: "인간팀"}.get(self.fixed_bot_team, "?")
+                print(f"[고정 봇] {side}은 항상 규칙봇 → 그 팀은 학습하지 않음")
 
         env = UnityEnvironment(
             file_name=config["env_path"],
@@ -754,12 +766,14 @@ class MAPPOTrainer:
                 # ---- 평가 트리거: N 스텝마다 학습 멈추고 고정상대 평가 진입 ----
                 if not self.in_eval and self.total_steps >= self.next_eval_step:
                     self.in_eval = True
-                    self.eval_frozen = 2          # 인간 고정 → 학습된 사보타주 측정부터
+                    # 인간 고정 → 학습된 사보타주 측정부터. 사보타주 팀이 고정 봇이면 인간 측정만
+                    self.eval_frozen = 1 if self.fixed_bot_team == 1 else 2
                     self.eval_ep_count = 0
                     param_channel.set_float_parameter("eval_mode", 1.0)
                     param_channel.set_float_parameter("bot_team", 0.0)
-                    param_channel.set_float_parameter("frozen_team", 2.0)
-                    print(f"[평가 시작] step={self.total_steps} | 사보타주 측정 (인간 규칙봇 고정)")
+                    param_channel.set_float_parameter("frozen_team", float(self.eval_frozen))
+                    print(f"[평가 시작] step={self.total_steps} | "
+                          + ("사보타주 측정 (인간 규칙봇 고정)" if self.eval_frozen == 2 else "인간 측정 (사보타주 규칙봇 고정)"))
 
                 # 현재 스텝의 에이전트 상태 가져오기
                 decision_steps, terminal_steps = env.get_steps(behavior_name)
@@ -909,7 +923,7 @@ class MAPPOTrainer:
 
                         # 목표 에피소드 수 도달 → 다음 매치업 또는 평가 종료
                         if self.eval_ep_count >= config["eval_episodes"]:
-                            if self.eval_frozen == 2:
+                            if self.eval_frozen == 2 and self.fixed_bot_team != 2:
                                 self.eval_frozen = 1        # 사보타주 고정 → 인간 측정
                                 self.eval_ep_count = 0
                                 param_channel.set_float_parameter("frozen_team", 1.0)
@@ -983,6 +997,10 @@ class MAPPOTrainer:
                     # 현재 스텝이 아니라 이전 버퍼 칸에 귀속시켜야 함
                     reward = decision_steps[agent_id].reward
                     self.episode_rewards[agent_id] += reward
+
+                    # 고정 봇 팀: 행동은 규칙봇이 정하므로 학습 데이터로 쓰지 않는다
+                    if self.fixed_bot_team and team == {1: "saboteur_team", 2: "human_team"}.get(self.fixed_bot_team):
+                        continue
 
                     buf = self.buffers[agent_id]
                     if len(buf) > 0:
@@ -1058,9 +1076,17 @@ if __name__ == "__main__":
     parser.add_argument("--graphics", action="store_true", help="화면 표시 (디버그용)")
     parser.add_argument("--editor", action="store_true",
                         help="빌드 대신 Unity 에디터에 연결 (실행 후 에디터에서 Play, 짧은 시험용)")
+    parser.add_argument("--balance-yaml", type=str, default=None,
+                        help="밸런스 yaml 경로 (기본 config/TheThing.yaml, 공동 학습: config/TheThing_selfplay_v4.yaml)")
+    parser.add_argument("--entropy-role", action="append", default=[],
+                        help="역할별 엔트로피 계수 role=value (예: saboteur=0.003)")
     args = parser.parse_args()
 
     # 커맨드라인 인자로 설정 덮어쓰기
+    if args.balance_yaml:
+        CONFIG["balance_yaml"] = args.balance_yaml
+    if args.entropy_role:
+        CONFIG["entropy_coef_by_role"] = {k: float(v) for k, v in (kv.split("=", 1) for kv in args.entropy_role)}
     if args.timesteps:
         CONFIG["total_timesteps"] = args.timesteps
     if args.env_path:

@@ -1,0 +1,85 @@
+# 이전 방향(인간팀·사보타주 공동 학습)의 최종 설정 N. 현재 설정은 TheThing.yaml (사보타주 vs 규칙봇)
+behaviors:
+  TheThing:
+    trainer_type: poca
+
+    hyperparameters:
+      batch_size: 1024
+      buffer_size: 10240
+      learning_rate: 3.0e-4
+      learning_rate_schedule: linear
+      beta: 0.01
+      beta_schedule: linear
+      epsilon: 0.2
+      lambd: 0.95
+      num_epoch: 3
+
+    network_settings:
+      normalize: true
+      hidden_units: 256
+      num_layers: 3
+
+    reward_signals:
+      extrinsic:
+        gamma: 0.995
+        strength: 1.0
+
+    keep_checkpoints: 10
+    checkpoint_interval: 200000
+    max_steps: 10000000
+    time_horizon: 128
+    summary_freq: 10000
+    threaded: true
+
+# ===========================================
+# 게임 밸런스 파라미터 (Unity에서 읽어감)
+# yaml만 수정하면 재빌드 없이 밸런스 실험 가능
+# ===========================================
+environment_parameters:
+  # 항해 설정
+  total_distance: 1000.0
+  ship_speed: 10.0
+
+  # 시스템 안정도
+  ship_stop_threshold: 50.0
+  sabotage_win_threshold: 30.0
+
+  # 상호작용
+  sabotage_damage: 7.0               # 10 → 7 (balance_v4)
+  repair_amount: 15.0
+  sabotage_time: 3.0
+  repair_time: 5.0
+
+  # 이동/시야
+  move_speed: 5.0
+  vision_range: 12.0                # 10 → 12 (balance_v2)
+
+  # 에피소드
+  max_episode_time: 300.0
+
+  # 밸런스 조정 (가상 환경 실험으로 결정: sim/results/balance/)
+  room_destroy_loss: 1.0            # 1: 방 하나 0% → 즉시 사보타주 승리 (유지)
+  alert_threshold: 70.0             # 위치 알림 임계값 30 → 70 (인간이 대응할 시간 확보)
+  repair_interrupts_sabotage: 1.0   # 부수는 중인 방에 수리를 시작하면 부수기 중단
+  shoot_grace_time: 10.0            # 시작 후 10초간 사격 불가 (카페에 모인 상태로 무작위 사격 방지)
+  share_witness: 1.0                # 인간팀 목격을 함장에게 공유 (balance_v2)
+
+  # 함장 사격 규칙 (captain_rules)
+  shoot_requires_evidence: 1.0      # NPC 함장은 목격 기록(직접 목격/신고)이 있는 대상만 사격 → 무작위 오사 불가
+  shoot_range: 25.0                 # 사격 사거리 (-1 = 시야, 0 = 무제한)
+  captain_bullets: 2.0
+
+  # 인간팀 보상 셰이핑: balance_v4 규칙에서는 필요 없음 → 0 (이전 밸런스에서 쓰던 값: 0.01 / 1.0 / 0.3 / 2.0)
+  reward_alert_approach: 0.0        # 알림 방까지 거리 1 줄 때마다
+  reward_interrupt: 0.0             # 부수기를 수리로 끊음
+  reward_witness: 0.0               # 사보타주 처음 목격 (사보타주당 1회)
+  reward_captain_hit: 0.0           # 함장 명중
+
+  # 학습 커리큘럼 (규칙봇 상대 게임). 트레이너 CONFIG의 bot_curriculum이 매 게임 설정함. 단독 효과 없음 → 기본 꺼짐
+  bot_team: 0.0
+
+  # 인간팀 학습용 규칙 (balance_v4: 셰이핑 없이도 인간팀이 학습)
+  commit_move: 1.0                  # 이동 중엔 새 방 선택 무시
+  auto_repair: 1.0                  # 인간팀은 손상된 방 근처에서 자동 수리/끊기
+  spawn_spread: 1.0                 # 시작 위치를 방 근처로 분산
+  ship_speed_by_health: 1.0         # 함선 속도 ∝ 평균 안정도

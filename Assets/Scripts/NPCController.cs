@@ -299,6 +299,9 @@ public class NPCController : MonoBehaviour
         
         NPCAIBrain brain = GetComponent<NPCAIBrain>();
         if (brain == null) return false;
+
+        // 강화 봇: 아무도 맡지 않은 손상 방이 생겼고 내가 가장 가까운 한가한 인간팀이면 방향을 바꾼다
+        if (IsBotLevel1()) return brain.ShouldRetargetV1(currentInteractionPoint);
         
         HashSet<string> damagedRooms = brain.GetKnownDamagedRooms();
         
@@ -419,6 +422,9 @@ public class NPCController : MonoBehaviour
     // ===== AI 의사결정 =====
     void DecideNextAction()
     {
+        // 강화 봇 함장: 근거 있는 대상이 있으면 방 대신 그 대상을 쫓는다
+        if (IsBotLevel1() && aiBrain != null && aiBrain.UpdateChase()) return;
+
         if (useScoreBasedAI && aiBrain != null)
         {
             DecideWithScoreBasedAI();
@@ -544,6 +550,33 @@ public class NPCController : MonoBehaviour
         SetState(NPCState.Moving);
     }
 
+    bool IsBotLevel1() => GameManager.Instance != null && GameManager.Instance.botLevel >= 1;
+    bool IsSaboteurRole() => RoleManager.Instance != null && RoleManager.Instance.IsSaboteur(gameObject);
+
+    // 강화 봇 대기 시간: 인간팀은 짧게(바로 다음 방), 사보타주는 결정 주기(0.4초)
+    float BotIdleTime(bool afterComplete)
+    {
+        if (IsSaboteurRole()) return 0.4f;
+        return afterComplete ? 0.2f : Random.Range(0.5f, 1.5f);
+    }
+
+    /// <summary>강화 봇 함장: 대상 위치로 이동 (진행 중인 수리는 취소)</summary>
+    public void ChaseTarget(Vector3 position)
+    {
+        if (isDead) return;
+        if (isInteracting && currentInteractionPoint != null)
+        {
+            currentInteractionPoint.CancelInteraction(gameObject);
+            isInteracting = false;
+            isSabotaging = false;
+            interactionTimer = 0f;
+        }
+        currentInteractionPoint = null;
+        agent.isStopped = false;
+        agent.SetDestination(position);
+        SetState(NPCState.Moving);
+    }
+
     // ===== 상호작용 =====
     void TryStartInteraction()
     {
@@ -552,6 +585,23 @@ public class NPCController : MonoBehaviour
             SetState(NPCState.Idle);
             idleTimer = Random.Range(minIdleTime, maxIdleTime);
             return;
+        }
+
+        // 강화 봇 도착 규칙
+        // - 인간팀: 손상된 방이면 수리, 멀쩡하면 잠깐 머문 뒤 다음 방
+        // - 사보타주: 시야에 인간팀이 있으면 부수지 않고 다시 결정
+        if (IsBotLevel1())
+        {
+            bool skip = IsSaboteurRole()
+                ? (aiBrain != null && aiBrain.CrewInSight())
+                : currentInteractionPoint.GetCurrentHealth() >= currentInteractionPoint.maxHealth;
+            if (skip)
+            {
+                currentInteractionPoint = null;
+                SetState(NPCState.Idle);
+                idleTimer = BotIdleTime(false);
+                return;
+            }
         }
 
         // 상호작용 시작 시도 (규칙봇: 사보타주가 아니면 수리)
@@ -569,7 +619,7 @@ public class NPCController : MonoBehaviour
             Debug.Log($"[상호작용 실패] {gameObject.name} - {currentInteractionPoint.roomName} 사용 중, 다른 행동 결정");
             currentInteractionPoint = null;
             SetState(NPCState.Idle);
-            idleTimer = 0.5f;  // 짧은 대기 후 재결정
+            idleTimer = IsBotLevel1() ? BotIdleTime(false) : 0.5f;  // 짧은 대기 후 재결정
         }
     }
 
@@ -624,7 +674,7 @@ public class NPCController : MonoBehaviour
         currentInteractionPoint = null;
 
         SetState(NPCState.Idle);
-        idleTimer = Random.Range(minIdleTime, maxIdleTime);
+        idleTimer = IsBotLevel1() ? BotIdleTime(true) : Random.Range(minIdleTime, maxIdleTime);
 
 #if UNITY_EDITOR
         Debug.Log($"[NPC 상호작용 완료] {gameObject.name}");
@@ -718,15 +768,16 @@ public class NPCController : MonoBehaviour
     public bool IsInteracting() => isInteracting;
     public NPCState GetCurrentState() => currentState;
     public bool IsMovingToRoom() => currentState == NPCState.Moving && currentInteractionPoint != null;
+    public InteractionPoint GetTargetRoom() => currentInteractionPoint;
 
     // ===== 자동 수리 (GameManager.autoRepair) =====
-    // 인간팀 ML 에이전트가 손상된 방 근처(interactionRange)에 있으면 행동 선택 없이 수리 시작.
+    // 인간팀 ML 에이전트(강화 봇이면 규칙봇도)가 손상된 방 근처(interactionRange)에 있으면 행동 선택 없이 수리 시작.
     // 사보타주가 부수는 중인 방이면 InteractionPoint가 부수기를 끊는다.
     private InteractionPoint[] cachedRooms;
 
     void TryAutoRepair()
     {
-        if (!useMLAgents || isInteracting || isDead) return;
+        if ((!useMLAgents && !IsBotLevel1()) || isInteracting || isDead) return;
         if (GameManager.Instance == null || !GameManager.Instance.autoRepair) return;
         if (RoleManager.Instance == null || RoleManager.Instance.IsSaboteur(gameObject)) return;
 

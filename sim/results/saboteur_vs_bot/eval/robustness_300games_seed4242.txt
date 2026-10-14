@@ -1,0 +1,14 @@
+B_s1|bot {"games": 300, "sab_win": 0.4, "dur": 75.28, "sab": 19.12, "hidden": 17.76, "rep": 5.9, "cut": 1.73, "shots": 1.2, "hit": 1.0, "destroy": 0.4}
+B_s1|bot_perc0.7 {"games": 300, "sab_win": 0.4, "dur": 74.46, "sab": 19.0, "hidden": 17.72, "rep": 5.8, "cut": 1.67, "shots": 1.17, "hit": 1.0, "destroy": 0.4}
+B_s1|bot_perc1.5 {"games": 300, "sab_win": 0.473, "dur": 73.06, "sab": 19.59, "hidden": 18.31, "rep": 5.66, "cut": 1.72, "shots": 1.14, "hit": 1.0, "destroy": 0.473}
+B_s1|bot_react3 {"games": 300, "sab_win": 0.43, "dur": 75.5, "sab": 19.75, "hidden": 18.45, "rep": 5.95, "cut": 1.82, "shots": 1.1, "hit": 1.0, "destroy": 0.43}
+B_s1|bot_nochase {"games": 300, "sab_win": 0.41, "dur": 83.18, "sab": 21.85, "hidden": 20.34, "rep": 7.8, "cut": 2.06, "shots": 0.91, "hit": 1.0, "destroy": 0.41}
+B_s1|bot_old {"games": 300, "sab_win": 0.79, "dur": 60.77, "sab": 21.33, "hidden": 20.76, "rep": 2.95, "cut": 0.71, "shots": 0.28, "hit": 1.0, "destroy": 0.79}
+B_s1|learned_crew {"games": 300, "sab_win": 0.75, "dur": 64.31, "sab": 20.14, "hidden": 19.22, "rep": 3.79, "cut": 1.16, "shots": 0.49, "hit": 1.0, "destroy": 0.75}
+rulebot|bot {"games": 300, "sab_win": 0.397, "dur": 74.17, "sab": 23.91, "hidden": 22.34, "rep": 8.03, "cut": 1.08, "shots": 1.35, "hit": 1.0, "destroy": 0.397}
+rulebot|bot_perc0.7 {"games": 300, "sab_win": 0.373, "dur": 75.62, "sab": 23.93, "hidden": 22.35, "rep": 8.07, "cut": 1.16, "shots": 1.35, "hit": 1.0, "destroy": 0.373}
+rulebot|bot_perc1.5 {"games": 300, "sab_win": 0.337, "dur": 74.21, "sab": 23.8, "hidden": 22.21, "rep": 8.1, "cut": 1.16, "shots": 1.4, "hit": 1.0, "destroy": 0.337}
+rulebot|bot_react3 {"games": 300, "sab_win": 0.5, "dur": 70.06, "sab": 23.5, "hidden": 22.04, "rep": 7.15, "cut": 1.0, "shots": 1.25, "hit": 1.0, "destroy": 0.5}
+rulebot|bot_nochase {"games": 300, "sab_win": 0.34, "dur": 91.34, "sab": 30.34, "hidden": 28.61, "rep": 12.24, "cut": 1.35, "shots": 0.96, "hit": 1.0, "destroy": 0.34}
+rulebot|bot_old {"games": 300, "sab_win": 0.43, "dur": 87.15, "sab": 25.09, "hidden": 24.27, "rep": 7.27, "cut": 1.13, "shots": 0.61, "hit": 1.0, "destroy": 0.43}
+rulebot|learned_crew {'games': 300, 'sab_win': 0.87, 'dur': 58.74, 'sab': 24.39, 'hidden': 23.44, 'rep': 4.8, 'cut': 0.47, 'shots': 0.33, 'hit': 1.0, 'destroy': 0.87}

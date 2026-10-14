@@ -122,6 +122,16 @@ public class NPCAIBrain : MonoBehaviour
         // 함장만 처형 로직 실행
         if (RoleManager.Instance != null && RoleManager.Instance.IsCaptain(gameObject))
         {
+            // 강화 봇: 근거 있는 대상을 0.2초마다 쫓아간다
+            if (UseV1)
+            {
+                chaseTimer += Time.deltaTime;
+                if (chaseTimer >= 0.2f)
+                {
+                    chaseTimer = 0f;
+                    UpdateChase();
+                }
+            }
             UpdateCaptainExecution();
         }
     }
@@ -176,6 +186,13 @@ public class NPCAIBrain : MonoBehaviour
         if (allRooms == null || allRooms.Length == 0) return null;
 
         RoleManager.Role myRole = RoleManager.Instance.GetRole(gameObject);
+
+        if (UseV1)
+        {
+            InteractionPoint v1 = myRole == RoleManager.Role.Saboteur ? DecideAsSaboteurV1() : DecideAsCrewV1();
+            SetCurrentDestination(v1);
+            return v1;
+        }
 
         switch (myRole)
         {
@@ -912,6 +929,194 @@ public class NPCAIBrain : MonoBehaviour
         return currentDestination;
     }
 
+    // ========================================
+    // 강화 봇 (GameManager.botLevel >= 1). 시뮬레이터: sim/thething_sim.py (bot_level 1)
+    // ========================================
+
+    private float chaseTimer = 0f;
+    private float retargetTimer = 0f;
+    private InteractionPoint pendingRetarget = null;
+
+    bool UseV1 => GameManager.Instance != null && GameManager.Instance.botLevel >= 1;
+
+    static float FlatDist(Vector3 a, Vector3 b)
+    {
+        a.y = 0f; b.y = 0f;
+        return Vector3.Distance(a, b);
+    }
+
+    bool IsCrew(GameObject ch) => RoleManager.Instance == null || !RoleManager.Instance.IsSaboteur(ch);
+
+    IEnumerable<GameObject> AliveCrew()
+    {
+        foreach (var ch in GameManager.Instance.allCharacters)
+            if (ch != null && ch.activeInHierarchy && IsCrew(ch)) yield return ch;
+    }
+
+    /// <summary>그 방으로 가는 중이거나 그 방에서 작업 중인 다른 인간팀 수</summary>
+    int CountCrewClaims(InteractionPoint room, GameObject except)
+    {
+        int n = 0;
+        foreach (var ch in AliveCrew())
+        {
+            if (ch == except) continue;
+            NPCController c = ch.GetComponent<NPCController>();
+            if (c == null || c.GetTargetRoom() != room) continue;
+            if (c.IsInteracting() || c.GetCurrentState() == NPCController.NPCState.Moving) n++;
+        }
+        return n;
+    }
+
+    /// <summary>인간팀: 알고 있는 손상 방 중 (필요량 / 거리 / 2^맡은 사람 수)가 가장 큰 방, 없으면 오래 안 본 방 순찰</summary>
+    InteractionPoint DecideAsCrewV1()
+    {
+        GameManager gm = GameManager.Instance;
+        if (pendingRetarget != null)
+        {
+            InteractionPoint r = pendingRetarget;
+            pendingRetarget = null;
+            if (gm.IsKnownDamaged(r)) return r;
+        }
+
+        InteractionPoint best = null;
+        float bestScore = float.MinValue;
+        foreach (var room in allRooms)
+        {
+            if (room == null || !gm.IsKnownDamaged(room)) continue;
+            float need = (room.maxHealth - gm.GetKnownHealth(room)) / room.maxHealth + 0.2f;
+            float score = need / Mathf.Max(FlatDist(transform.position, room.transform.position), 1f)
+                          / Mathf.Pow(2f, CountCrewClaims(room, gameObject));
+            if (score > bestScore) { bestScore = score; best = room; }
+        }
+        if (best != null) return best;
+
+        // 순찰: (오래 안 본 정도 / 거리 / 맡은 사람 수)^2 비례 확률
+        float total = 0f;
+        float[] w = new float[allRooms.Length];
+        for (int i = 0; i < allRooms.Length; i++)
+        {
+            InteractionPoint room = allRooms[i];
+            if (room == null) continue;
+            float stale = gm.GetEpisodeTime() - gm.GetKnownTime(room) + 5f;
+            float v = stale / (1f + FlatDist(transform.position, room.transform.position) / 60f)
+                      / (1f + 3f * CountCrewClaims(room, gameObject));
+            w[i] = v * v;
+            total += w[i];
+        }
+        float pick = Random.value * total;
+        for (int i = 0; i < allRooms.Length; i++)
+        {
+            pick -= w[i];
+            if (pick <= 0f && allRooms[i] != null) return allRooms[i];
+        }
+        return allRooms[allRooms.Length - 1];
+    }
+
+    /// <summary>이동 중 재지정 (0.2초마다): 아무도 맡지 않은 손상 방에 가장 가까운 한가한 인간팀 봇이 나라면 true</summary>
+    public bool ShouldRetargetV1(InteractionPoint currentTarget)
+    {
+        retargetTimer += Time.deltaTime;
+        if (retargetTimer < 0.2f) return false;
+        retargetTimer = 0f;
+        GameManager gm = GameManager.Instance;
+        if (currentTarget != null && gm.IsKnownDamaged(currentTarget)) return false;
+
+        foreach (var room in allRooms)
+        {
+            if (room == null || !gm.IsKnownDamaged(room) || CountCrewClaims(room, null) > 0) continue;
+            GameObject nearest = null;
+            float nd = float.MaxValue;
+            foreach (var ch in AliveCrew())
+            {
+                NPCController c = ch.GetComponent<NPCController>();
+                if (c == null || c.IsUsingML() || c.IsInteracting()) continue;
+                InteractionPoint t = c.GetTargetRoom();
+                if (t != null && gm.IsKnownDamaged(t)) continue;      // 이미 손상 방으로 가는 중
+                float d = FlatDist(ch.transform.position, room.transform.position);
+                if (d < nd) { nd = d; nearest = ch; }
+            }
+            if (nearest == gameObject)
+            {
+                pendingRetarget = room;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>함장: 근거(직접 목격/신고) 있는 살아 있는 대상 중 가장 가까운 대상을 쫓는다. 쫓으면 true</summary>
+    public bool UpdateChase()
+    {
+        GameManager gm = GameManager.Instance;
+        if (!UseV1 || !gm.botChase || npcController == null || npcController.IsUsingML()) return false;
+        if (RoleManager.Instance == null || !RoleManager.Instance.IsCaptain(gameObject)) return false;
+        if (captainGun == null || captainGun.GetRemainingBullets() <= 0 || !gm.CanShoot()) return false;
+
+        GameObject target = null;
+        float best = float.MaxValue;
+        foreach (var ch in gm.allCharacters)
+        {
+            if (ch == null || ch == gameObject || !ch.activeInHierarchy) continue;
+            if (!gm.HasWitnessedSabotage(gameObject, ch)) continue;
+            float d = FlatDist(transform.position, ch.transform.position);
+            if (d < best) { best = d; target = ch; }
+        }
+        if (target == null) return false;
+        npcController.ChaseTarget(target.transform.position);
+        return true;
+    }
+
+    /// <summary>사보타주: 시야(visionRange) 안에 살아 있는 인간팀이 있는가</summary>
+    public bool CrewInSight()
+    {
+        float vis = GameManager.Instance.visionRange;
+        foreach (var ch in AliveCrew())
+            if (ch != gameObject && FlatDist(transform.position, ch.transform.position) <= vis) return true;
+        return false;
+    }
+
+    /// <summary>사보타주(회피형): 타겟 유지, 시야에 인간팀이 보이면 다른 방으로.
+    /// 방 선택 = (25 안의 인간팀 수, 거리) 최소, 동료가 노리는 방 제외. 위치 정보는 전지적(규칙봇 특권)</summary>
+    InteractionPoint DecideAsSaboteurV1()
+    {
+        bool seen = CrewInSight();
+        if (sabotageTarget == null || sabotageTarget.GetCurrentHealth() <= 0f || seen)
+            sabotageTarget = PickSabotageTargetV1(seen ? sabotageTarget : null);
+        return sabotageTarget;
+    }
+
+    InteractionPoint PickSabotageTargetV1(InteractionPoint avoid)
+    {
+        HashSet<InteractionPoint> taken = new HashSet<InteractionPoint>();
+        foreach (var sab in GameManager.Instance.saboteurs)
+        {
+            if (sab == null || sab == gameObject || !sab.activeInHierarchy) continue;
+            NPCAIBrain other = sab.GetComponent<NPCAIBrain>();
+            if (other != null && other.GetCurrentSabotageTarget() != null) taken.Add(other.GetCurrentSabotageTarget());
+        }
+        List<InteractionPoint> cand = new List<InteractionPoint>();
+        foreach (var room in allRooms)
+            if (room != null && !taken.Contains(room) && room.GetCurrentHealth() > 0f) cand.Add(room);
+        if (cand.Count == 0) cand.AddRange(allRooms);
+
+        InteractionPoint best = null;
+        int bestDanger = int.MaxValue;
+        float bestDist = float.MaxValue;
+        foreach (var room in cand)
+        {
+            if (room == null) continue;
+            int danger = 0;
+            foreach (var ch in AliveCrew())
+                if (FlatDist(ch.transform.position, room.transform.position) <= 25f) danger++;
+            float d = FlatDist(transform.position, room.transform.position) + (room == avoid ? 100f : 0f);
+            if (danger < bestDanger || (danger == bestDanger && d < bestDist))
+            {
+                best = room; bestDanger = danger; bestDist = d;
+            }
+        }
+        return best;
+    }
+
     // ===== Brain 리셋 =====
 
     public void ResetBrain()
@@ -929,6 +1134,9 @@ public class NPCAIBrain : MonoBehaviour
         // 타겟 초기화
         sabotageTarget = null;
         currentDestination = null;
+        pendingRetarget = null;
+        chaseTimer = 0f;
+        retargetTimer = 0f;
 
 #if UNITY_EDITOR
         Debug.Log($"[리셋] {gameObject.name} AI Brain 초기화");

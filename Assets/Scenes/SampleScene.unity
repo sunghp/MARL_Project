@@ -3130,14 +3130,14 @@ MonoBehaviour:
   stoppedSpeed: 0
   maxSystemHealth: 100
   shipStopThreshold: 50
-  locationAlertThreshold: 70
+  locationAlertThreshold: 60
   sabotageWinThreshold: 30
   sabotageTime: 3
-  sabotageDamage: 7
+  sabotageDamage: 8
   repairTime: 5
   repairAmount: 15
   moveSpeed: 5
-  visionRange: 12
+  visionRange: 10
   sabotageCount: 2
   humanCount: 3
   captainBullets: 2

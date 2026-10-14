@@ -29,7 +29,7 @@ h1 { font-size: 24px; margin: 0 0 4px; letter-spacing: -0.01em; }
 h2 { font-size: 16px; margin: 0 0 10px; }
 .sub { color: var(--muted); margin: 0 0 20px; font-size: 14px; }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
-.insights { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+.insights { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 16px; }
 .insight b { display: block; font-size: 15px; margin-bottom: 4px; }
 .insight .big { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; margin: 2px 0 4px; }
 .insight p { margin: 0; color: var(--muted); font-size: 13.5px; }
@@ -117,7 +117,7 @@ label.chk { display: inline-flex; gap: 6px; align-items: center; font-size: 13.5
         <span><i class="dot" style="background:var(--captain)"></i>함장</span>
         <span><i class="dot" style="background:var(--sab)"></i>사보타주</span>
         <span>빨간 고리 = 부수는 중 · 초록 고리 = 수리 중</span>
-        <span>방 테두리 빨강 = 알림(안정도 70% 미만)</span>
+        <span id="alertLegend">방 테두리 빨강 = 알림</span>
         <span>노란 선 = 함장 사격</span>
       </div>
     </div>
@@ -139,14 +139,20 @@ const D = {"map":{"rooms":[{"name":"NavigationRoom","x":-1.34,"z":42.12},{"name"
 
 const KO = { NavigationRoom: "항해실", ElectronicRoom: "전기실", CommunityRoom: "휴게실", OxygenRoom: "산소실",
   Storage: "창고", ProtectorRoom: "방어실", EngineRoom: "엔진실", NeclearReactor: "원자로" };
-const POL = [["trained", "전원 학습"], ["sab_only", "사보타주만 학습"], ["random", "전원 무작위"]];
-const POL_LONG = { trained: "모두 학습 정책", sab_only: "사보타주 학습 · 인간팀 무작위", random: "모두 무작위 행동" };
+// 조합 이름: 데이터의 policy_meta가 있으면 그것을, 없으면 공동 학습 실험의 기본값
+const META = D.policy_meta || [
+  { key: "trained", label: "전원 학습", long: "모두 학습 정책" },
+  { key: "sab_only", label: "사보타주만 학습", long: "사보타주 학습 · 인간팀 무작위" },
+  { key: "random", label: "전원 무작위", long: "모두 무작위 행동" }];
+const POL = META.map(m => [m.key, m.label]);
+const POL_LONG = Object.fromEntries(META.map(m => [m.key, m.long]));
 const ROLE_KO = { crew: "선원", captain: "함장", saboteur: "사보타주" };
 const SPEEDS = [1, 2, 4, 8, 16];
+const ALERT = (D.params && D.params.alert_threshold) || 70;   // 알림 임계값 (안정도 %)
 const rooms = D.map.rooms.map(r => ({ ...r, ko: KO[r.name] || r.name }));
 const koReason = s => s.replace(/[A-Za-z]+/g, m => KO[m] || m);
 
-const S = { pol: "trained", gi: 0, t: 0, playing: false, speed: 4, reveal: true };
+const S = { pol: POL[0][0], gi: 0, t: 0, playing: false, speed: 4, reveal: true };
 let G = null, events = [], endT = 1;
 
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -155,6 +161,7 @@ const fmt = (x, d = 1) => x == null ? "–" : Number(x).toFixed(d);
 
 // ---------- 상단: 요약 ----------
 function header() {
+  if (D.story) return storyHeader(D.story);
   const ck = D.checkpoint, n = D.policies.trained.summary.games;
   document.getElementById("sub").textContent =
     `${ck.file} (${(ck.total_steps / 1e6).toFixed(2)}M 스텝 학습) 정책을 파이썬 시뮬레이터에서 돌린 결과. ` +
@@ -177,8 +184,19 @@ function header() {
     "행동은 학습 때와 같은 확률적 샘플링이고, 게임마다 학습 루프와 같은 방식으로 리셋했다. 무작위 = 매 결정마다 이동·상호작용을 균등하게 고름.";
 }
 
+function storyHeader(st) {
+  document.getElementById("sub").textContent = st.sub || "";
+  document.getElementById("insights").innerHTML = (st.insights || []).map(c =>
+    `<div class="card insight"><b>${c.title}</b><div class="big">${c.big}</div><p>${c.text}</p></div>`).join("");
+  if (st.title) document.querySelector("h1").textContent = st.title;
+  if (st.table_title) document.querySelector(".card h2").textContent = st.table_title;
+  statsTable();
+  document.getElementById("note").textContent = st.note || "";
+}
+
 function statsTable() {
   const rows = [
+    ["사보타주 승률", s => pct(1 - s.crew_win)],
     ["인간팀 승률", s => pct(s.crew_win)],
     ["게임 길이(초)", s => fmt(s.duration)],
     ["부수기 / 판", s => fmt(s.sabotage)],
@@ -356,9 +374,9 @@ function draw() {
     const label = `${hp.toFixed(0)}%`, tw = ctx.measureText("100%").width;
     const bx = x - half, by = y + hh + 8, bw = Math.max(10, half * 2 - tw - 5);
     ctx.fillStyle = C.line; ctx.fillRect(bx, by - 2, bw, 4);
-    ctx.fillStyle = hp >= 70 ? C.good : hp >= 35 ? C.cap : C.warn;
+    ctx.fillStyle = hp > ALERT ? C.good : hp >= 35 ? C.cap : C.warn;
     ctx.fillRect(bx, by - 2, bw * Math.max(0, hp) / 100, 4);
-    ctx.fillStyle = hp < 70 ? C.warn : C.muted;
+    ctx.fillStyle = hp <= ALERT ? C.warn : C.muted;
     ctx.textAlign = "right"; ctx.fillText(label, x + half, by);
     ctx.textAlign = "center";
   });
@@ -439,6 +457,7 @@ document.addEventListener("keydown", e => {
 });
 window.addEventListener("resize", layout);
 
+document.getElementById("alertLegend").textContent = `방 테두리 빨강 = 알림(안정도 ${ALERT}% 이하)`;
 header();
 loadGame();
 layout();

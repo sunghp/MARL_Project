@@ -91,6 +91,12 @@ DEFAULT_PARAMS = {
     "auto_repair": 0.0,                # 1: 인간팀은 손상된 방 근처(repair_range)에 가면 행동 선택 없이 자동 수리/끊기
     "auto_sabotage": 0.0,              # 1: 사보타주는 목표 방에 도착하면 자동으로 부수기 (부수는 동안 이동 불가)
     "commit_move": 1.0 if os.environ.get("SIM_COMMIT_MOVE", "0") == "1" else 0.0,  # 1: 방으로 이동 중엔 새 방 선택 무시
+    # 규칙봇 수준: 0 = 이전 봇, 1 = 강화 봇 (공유 정보 + 순찰 + 알림 재지정 + 함장 추적 / 사보타주 타겟 유지 + 회피)
+    "bot_level": 0.0,
+    # 강화 봇 변형 (강건성 평가용, 기본값 = 기본 봇)
+    "bot_perception": 1.0,             # 방 상태를 아는 거리 = vision_range × 이 값
+    "bot_reaction": 0.0,               # 손상을 안 뒤 대응하기까지 지연(초)
+    "bot_chase": 1.0,                  # 1: 함장이 근거 있는 대상을 쫓아감
     "eval_mode": 0.0,
     "frozen_team": 0.0,
 }
@@ -162,6 +168,7 @@ class Char:
         # 규칙봇 상태
         self.bot_idle = 0.0
         self.bot_wants_sab = False
+        self.bot_target = None       # 사보타주 봇: 공략 중인 방
 
 
 def dist(a, b):
@@ -251,8 +258,13 @@ class TheThingWorld:
             c.bullets = int(self.p("captain_bullets"))
             c.bot_idle = 0.0
             c.bot_wants_sab = False
+            c.bot_target = None
         self.suspicion = {}
         self._exec_timer = 0.0
+        # 강화 봇: 인간팀 공유 정보 (마지막으로 본 안정도, 본 시각, 손상을 처음 안 시각)
+        self.known = [100.0] * len(self.rooms)
+        self.known_t = [0.0] * len(self.rooms)
+        self.known_detect = [None] * len(self.rooms)
         # 역할 배정 (RoleManager.AssignRoles)
         order = list(self.chars)
         self.rng.shuffle(order)
@@ -649,6 +661,8 @@ class TheThingWorld:
         c.room = None
         c.state = "idle"
         c.bot_idle = self.rng.uniform(1.0, 3.0)
+        if self.p("bot_level") >= 1:
+            c.bot_idle = 0.2 if role != SABOTEUR else 0.4
 
     def _update_avg_health(self):
         self.avg_health = sum(r.health for r in self.rooms) / len(self.rooms)
@@ -665,11 +679,17 @@ class TheThingWorld:
         if self.state != "Playing":
             return
         speed = self.p("move_speed")
+        lvl1 = self.p("bot_level") >= 1
+        if lvl1 and self.total_ticks % 5 == 0:     # 0.1초마다
+            self._update_knowledge()
         for c in self.chars:
             if not c.active or c.dead:
                 continue
             if not c.use_ml:
-                self._bot_think(c)
+                if lvl1:
+                    self._bot_think_v1(c)
+                else:
+                    self._bot_think(c)
             if (self.p("auto_repair") > 0.5 and not c.interacting
                     and self.role[c.idx] != SABOTEUR):
                 rr = self.p("repair_range")
@@ -696,6 +716,8 @@ class TheThingWorld:
                 if remain <= 0.5:
                     if c.use_ml:
                         c.state = "idle"
+                    elif lvl1:
+                        self._bot_arrive_v1(c)
                     elif c.room is not None:
                         if not self._try_start(c, self.role[c.idx] == SABOTEUR and c.bot_wants_sab):
                             c.state = "idle"
@@ -905,3 +927,142 @@ class TheThingWorld:
             self.suspicion.pop(i, None)
             self._exec_timer = 0.0
             self._execute(cap, self.chars[i])
+
+    # ------------------------------------------------------------------
+    # 강화 규칙봇 (bot_level 1). C#: NPCAIBrain (botLevel 1)
+    # ------------------------------------------------------------------
+    def _is_crew(self, c):
+        return self.role[c.idx] != SABOTEUR
+
+    def _update_knowledge(self):
+        """인간팀 공유 정보: 누군가 시야 안에서 본 방, 알림이 뜬 방의 안정도"""
+        see = self.p("vision_range") * self.p("bot_perception")
+        crew = [o for o in self.alive if o.active and self._is_crew(o)]
+        for r in self.rooms:
+            if r.alerted or any(dist(o.pos, r.pos) <= see for o in crew):
+                self.known[r.idx] = r.health
+                self.known_t[r.idx] = self.timer
+            if self.known[r.idx] < 100.0:
+                if self.known_detect[r.idx] is None:
+                    self.known_detect[r.idx] = self.timer
+            else:
+                self.known_detect[r.idx] = None
+
+    def _known_damaged(self, r):
+        t0 = self.known_detect[r.idx]
+        return t0 is not None and self.timer - t0 >= self.p("bot_reaction")
+
+    def _claims(self, room, me):
+        """그 방으로 가는 중이거나 그 방에서 작업 중인 다른 인간팀 수"""
+        return sum(1 for o in self.alive
+                   if o is not me and o.active and self._is_crew(o) and o.room is room
+                   and o.state in ("moving", "interacting"))
+
+    def _evidence_target(self, cap):
+        """함장이 근거(직접 목격/신고)를 가진 살아 있는 대상 중 가장 가까운 대상"""
+        ids = [i for i in self.witnessed.get(cap.idx, ()) if self.chars[i].active and not self.chars[i].dead]
+        if not ids:
+            return None
+        return min((self.chars[i] for i in ids), key=lambda t: dist(cap.pos, t.pos))
+
+    def _go(self, c, room, sab=False):
+        c.room = room
+        c.dest = room.pos.copy()
+        c.state = "moving"
+        c.bot_wants_sab = sab
+
+    def _bot_think_v1(self, c):
+        crew = self._is_crew(c)
+        # 함장: 근거 있는 대상이 있으면 쫓아간다 (사격은 _captain_bot)
+        if (c is self.captain and self.p("bot_chase") > 0.5 and c.bullets > 0
+                and self.timer >= self.p("shoot_grace_time")):
+            t = self._evidence_target(c)
+            if t is not None:
+                if c.interacting:
+                    self._cancel(c)
+                c.room = None
+                c.dest = t.pos.copy()
+                c.state = "moving"
+                return
+        if c.interacting:
+            return
+        if c.state == "moving":
+            # 이동 중 재지정: 아무도 맡지 않은 손상 방이 생겼고 내가 가장 가까운 '한가한' 인간팀이면 방향을 바꾼다
+            if crew and self.total_ticks % 10 == 0 and (c.room is None or not self._known_damaged(c.room)):
+                self._retarget(c)
+            return
+        c.bot_idle -= DT
+        if c.bot_idle > 0:
+            return
+        if crew:
+            self._crew_decide(c)
+        else:
+            self._sab_decide(c)
+
+    def _retarget(self, c):
+        free = [o for o in self.alive if o.active and self._is_crew(o) and not o.use_ml and not o.interacting
+                and (o.room is None or not self._known_damaged(o.room))]
+        for r in self.rooms:
+            if not self._known_damaged(r) or self._claims(r, None) > 0:
+                continue
+            if free and min(free, key=lambda o: dist(o.pos, r.pos)) is c:
+                self._go(c, r)
+                return
+
+    def _crew_decide(self, c):
+        dmg = [r for r in self.rooms if self._known_damaged(r)]
+        if dmg:
+            def score(r):
+                need = (100.0 - self.known[r.idx]) / 100.0 + 0.2
+                return need / max(dist(c.pos, r.pos), 1.0) / (2.0 ** self._claims(r, c))
+            self._go(c, max(dmg, key=score))
+            return
+        # 순찰: 오래 안 본 방, 가까운 방, 아무도 안 가는 방
+        w = []
+        for r in self.rooms:
+            stale = self.timer - self.known_t[r.idx] + 5.0
+            w.append((stale / (1.0 + dist(c.pos, r.pos) / 60.0) / (1.0 + 3.0 * self._claims(r, c))) ** 2)
+        self._go(c, self.rng.choices(self.rooms, weights=w)[0])
+
+    def _bot_arrive_v1(self, c):
+        r = c.room
+        if r is None:
+            c.state = "idle"                 # 함장 추적 중 도착
+            return
+        if self._is_crew(c):
+            if r.health < 100.0 and self._try_start(c, False):
+                return
+        elif c.bot_wants_sab and self._sab_arrive(c):
+            return
+        c.state = "idle"
+        c.room = None
+        c.bot_idle = self.rng.uniform(0.5, 1.5) if self._is_crew(c) else 0.4
+
+    # --- 사보타주 봇 (회피형): 인간팀이 적은 방을 공략, 시야에 인간팀이 있으면 부수지 않고 옮긴다 ---
+    #     위치 정보는 전지적(규칙봇 특권). 학습 사보타주는 자기 시야만 본다.
+    def _crew_in_sight(self, c):
+        vis = self.p("vision_range")
+        return any(o.active and self._is_crew(o) and dist(c.pos, o.pos) <= vis for o in self.alive)
+
+    def _sab_pick(self, c, avoid=None):
+        crew = [o for o in self.alive if o.active and self._is_crew(o)]
+        taken = {o.bot_target for o in self.saboteurs if o is not c}
+        cand = [r for r in self.rooms if r not in taken and r.health > 0] or list(self.rooms)
+
+        def key(r):
+            danger = sum(1 for o in crew if dist(o.pos, r.pos) <= 25.0)
+            return (danger, dist(c.pos, r.pos) + (100.0 if r is avoid else 0.0))
+        return min(cand, key=key)
+
+    def _sab_decide(self, c):
+        t = c.bot_target
+        seen = self._crew_in_sight(c)
+        if t is None or t.health <= 0 or seen:
+            t = c.bot_target = self._sab_pick(c, avoid=t if seen else None)
+        self._go(c, t, sab=True)
+
+    def _sab_arrive(self, c):
+        """도착: 시야에 인간팀이 없으면 부수기, 있으면 잠시 뒤 다시 결정"""
+        if not self._crew_in_sight(c) and self._try_start(c, True):
+            return True
+        return False

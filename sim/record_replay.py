@@ -4,7 +4,11 @@ record_replay.py - 시뮬레이터에서 게임을 돌려 리플레이(JSON)로 
   python sim/record_replay.py --checkpoint models/sim_balance_v4_4M_seed2.pt --games 100 --keep 4 \\
       --out sim/results/replay/replay.json --html sim/results/replay/replay.html
 
-- 세 조합으로 게임을 돌린다: 전원 학습 정책("trained"), 사보타주만 학습("sab_only"), 전원 무작위("random"). 규칙은 config/TheThing.yaml과 같다.
+- 조합(--policies)마다 게임을 돌린다. 인간팀이 학습 정책인지 규칙봇인지는 yaml의 bot_team을 따른다.
+  trained : 체크포인트의 정책 (bot_team 2면 사보타주만, 인간팀은 규칙봇)
+  sab_only: 사보타주만 학습 정책, 인간팀은 무작위 (공동 학습 실험 비교용)
+  rulebot : 사보타주도 규칙봇 (전원 규칙봇)
+  random  : 학습 정책 대신 무작위 행동 (bot_team 2면 사보타주만 무작위) 규칙은 config/TheThing.yaml과 같다.
 - 결정 시점(0.4초)마다 프레임을 남긴다: 캐릭터 위치/상태, 방 안정도/알림/사용 중, 함선 진행도.
 - 사건: 부수기 완료, 수리 완료, 끊기, 목격(첫 목격), 함장 신고 수신, 사격, 게임 종료.
 - 전체 게임의 요약 통계와 함께, 종료 사유가 골고루 섞이도록 고른 몇 판의 프레임을 저장한다.
@@ -140,6 +144,9 @@ def run(policy, actors, n_games, seed, params):
     from mlagents_envs.base_env import ActionTuple
     from mlagents_envs.side_channel.environment_parameters_channel import EnvironmentParametersChannel
 
+    params = dict(params)
+    if policy == "rulebot":
+        params.update(eval_mode=1.0, frozen_team=3.0)     # 전원 규칙봇 (시뮬레이터 분석 전용)
     pc = EnvironmentParametersChannel()
     for k, v in params.items():
         pc.set_float_parameter(k, v)
@@ -236,6 +243,9 @@ if __name__ == "__main__":
     ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--out", required=True, help="리플레이 JSON 경로")
     ap.add_argument("--html", default="", help="리플레이 뷰어 HTML도 함께 저장 (데이터 내장)")
+    ap.add_argument("--policies", default="trained,sab_only,random", help="쉼표로 구분 (trained, sab_only, rulebot, random)")
+    ap.add_argument("--labels", default="", help="뷰어 표시 이름 JSON {policy: [짧은 이름, 긴 이름]}")
+    ap.add_argument("--story", default="", help="뷰어 상단 요약 JSON 파일 {sub, insights: [{title, big, text}], note}")
     args = ap.parse_args()
 
     params = load_params()
@@ -254,8 +264,14 @@ if __name__ == "__main__":
         "decision_dt": ts.DT * ts.DECISION_PERIOD,
         "policies": {},
     }
-    # trained: 모두 학습 정책 / sab_only: 사보타주만 학습, 인간팀은 무작위 / random: 모두 무작위
-    for policy in ("trained", "sab_only", "random"):
+    policies = [x for x in args.policies.split(",") if x]
+    labels = json.loads(args.labels) if args.labels else {}
+    result["policy_meta"] = [{"key": k, "label": labels.get(k, [k, k])[0], "long": labels.get(k, [k, k])[1]}
+                             for k in policies]
+    if args.story:
+        with open(args.story, encoding="utf-8") as f:
+            result["story"] = json.load(f)
+    for policy in policies:
         games = run(policy, actors, args.games, args.seed, params)
         result["policies"][policy] = {"summary": summarize(games), "replays": pick(games, args.keep)}
         print(policy, json.dumps(result["policies"][policy]["summary"], ensure_ascii=False))
@@ -263,9 +279,6 @@ if __name__ == "__main__":
         json.dump(result, f, ensure_ascii=False, separators=(",", ":"))
     print(args.out, os.path.getsize(args.out), "bytes")
     if args.html:
-        with open(os.path.join(HERE, "replay_viewer_template.html"), encoding="utf-8") as f:
-            page = f.read()
-        data = json.dumps(result, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
-        with open(args.html, "w", encoding="utf-8") as f:
-            f.write(page.replace("/*__DATA__*/null", data))
+        from build_replay_html import write_html
+        write_html(result, args.html)
         print(args.html, os.path.getsize(args.html), "bytes")

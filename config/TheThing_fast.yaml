@@ -31,28 +31,37 @@ behaviors:
 
 # 밸런스 파라미터 (메인 config와 동일)
 environment_parameters:
+  # 항해 설정
   total_distance: 1000.0
   ship_speed: 10.0
+
+  # 시스템 안정도
   ship_stop_threshold: 50.0
   sabotage_win_threshold: 30.0
-  sabotage_damage: 7.0               # 10 → 7 (balance_v4)
+
+  # 상호작용
+  sabotage_damage: 8.0               # 7 → 8 (saboteur_vs_bot)
   repair_amount: 15.0
   sabotage_time: 3.0
   repair_time: 5.0
+
+  # 이동/시야
   move_speed: 5.0
-  vision_range: 12.0                # 10 → 12 (balance_v2)
+  vision_range: 10.0                # 12 → 10 (saboteur_vs_bot)
+
+  # 에피소드
   max_episode_time: 300.0
 
   # 밸런스 조정 (가상 환경 실험으로 결정: sim/results/balance/)
   room_destroy_loss: 1.0            # 1: 방 하나 0% → 즉시 사보타주 승리 (유지)
-  alert_threshold: 70.0             # 위치 알림 임계값 30 → 70 (인간이 대응할 시간 확보)
+  alert_threshold: 60.0             # 위치 알림 임계값 70 → 60 (saboteur_vs_bot; 강화 봇은 시야로도 손상을 안다)
   repair_interrupts_sabotage: 1.0   # 부수는 중인 방에 수리를 시작하면 부수기 중단
   shoot_grace_time: 10.0            # 시작 후 10초간 사격 불가 (카페에 모인 상태로 무작위 사격 방지)
   share_witness: 1.0                # 인간팀 목격을 함장에게 공유 (balance_v2)
 
   # 함장 사격 규칙 (captain_rules)
   shoot_requires_evidence: 1.0      # NPC 함장은 목격 기록(직접 목격/신고)이 있는 대상만 사격 → 무작위 오사 불가
-  shoot_range: 25.0                 # 사격 사거리 (-1 = 시야, 0 = 무제한)
+  shoot_range: 15.0                 # 사격 사거리 25 → 15 (saboteur_vs_bot; 강화 봇 함장은 대상을 쫓아간다)
   captain_bullets: 2.0
 
   # 인간팀 보상 셰이핑: balance_v4 규칙에서는 필요 없음 → 0 (이전 밸런스에서 쓰던 값: 0.01 / 1.0 / 0.3 / 2.0)
@@ -61,8 +70,15 @@ environment_parameters:
   reward_witness: 0.0               # 사보타주 처음 목격 (사보타주당 1회)
   reward_captain_hit: 0.0           # 함장 명중
 
-  # 학습 커리큘럼 (규칙봇 상대 게임). 트레이너 CONFIG의 bot_curriculum이 매 게임 설정함. 단독 효과 없음 → 기본 꺼짐
-  bot_team: 0.0
+  # 학습 상대: 2 = 인간팀(선원·함장)은 항상 규칙봇, 사보타주만 학습 (sim/results/saboteur_vs_bot)
+  # 0 = 공동 학습(이전 방향, config/TheThing_selfplay_v4.yaml). 트레이너 CONFIG의 bot_curriculum을 쓰면 그쪽이 우선
+  bot_team: 2.0
+
+  # 규칙봇 (bot_level 1 = 강화 봇: 인간팀 공유 정보·순찰·알림 재지정·함장 추적 / 회피형 사보타주)
+  bot_level: 1.0
+  bot_perception: 1.0               # 인간팀 봇이 방 상태를 아는 거리 = vision_range × 이 값
+  bot_reaction: 0.0                 # 손상을 안 뒤 대응 지연(초)
+  bot_chase: 1.0                    # 함장 봇이 근거 있는 대상을 쫓아감
 
   # 인간팀 학습용 규칙 (balance_v4: 셰이핑 없이도 인간팀이 학습)
   commit_move: 1.0                  # 이동 중엔 새 방 선택 무시

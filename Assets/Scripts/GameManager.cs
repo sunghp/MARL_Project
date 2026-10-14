@@ -40,7 +40,7 @@ public class GameManager : MonoBehaviour
     public float shipStopThreshold = 50f;
 
     [Tooltip("위치 공지 임계값")]
-    public float locationAlertThreshold = 70f;   // 30 → 70: 인간팀이 대응할 시간 확보 (sim/results/balance)
+    public float locationAlertThreshold = 60f;   // 30 → 70 (sim/results/balance) → 60 (sim/results/saboteur_vs_bot)
 
     [Tooltip("사보타주 승리 임계값 (전체 평균 안정도)")]
     public float sabotageWinThreshold = 30f;
@@ -61,7 +61,7 @@ public class GameManager : MonoBehaviour
     public bool shootRequiresEvidence = true;
 
     [Tooltip("NPC 함장 사격 사거리: -1 = 시야(visionRange), 0 = 무제한(소집 후 처형처럼 지목), >0 = 그 거리")]
-    public float shootRange = 25f;   // sim/results/captain_rules (I)
+    public float shootRange = 15f;   // 25 (sim/results/captain_rules) → 15 (sim/results/saboteur_vs_bot)
 
     [Header("=== 인간팀 보상 셰이핑 (env param으로 덮어씀) ===")]
     [Tooltip("알림 방까지 거리가 1 줄어들 때마다 인간팀 보상")]
@@ -87,12 +87,22 @@ public class GameManager : MonoBehaviour
     [Tooltip("평가와 별개로 학습 게임에서 규칙봇으로 둘 팀: 0=없음, 1=사보타주, 2=인간팀")]
     public int botTeam = 0;
 
+    [Header("=== 규칙봇 (env param bot_level, bot_perception, bot_reaction, bot_chase) ===")]
+    [Tooltip("0 = 이전 봇, 1 = 강화 봇 (인간팀 공유 정보 + 순찰 + 알림 재지정 + 함장 추적 / 회피형 사보타주)")]
+    public int botLevel = 1;
+    [Tooltip("인간팀이 방 상태를 아는 거리 = visionRange × 이 값")]
+    public float botPerception = 1f;
+    [Tooltip("손상을 안 뒤 대응하기까지 지연(초)")]
+    public float botReaction = 0f;
+    [Tooltip("함장 봇이 근거 있는 대상을 쫓아감")]
+    public bool botChase = true;
+
     [Header("=== 상호작용 파라미터 ===")]
     [Tooltip("부수기 시간 (초)")]
     public float sabotageTime = 3f;
 
     [Tooltip("부수기 시 감소량")]
-    public float sabotageDamage = 7f;   // 10 → 7 (sim/results/balance_v4)
+    public float sabotageDamage = 8f;   // 10 → 7 (sim/results/balance_v4) → 8 (sim/results/saboteur_vs_bot)
 
     [Tooltip("고치기 시간 (초)")]
     public float repairTime = 5f;
@@ -105,7 +115,7 @@ public class GameManager : MonoBehaviour
     public float moveSpeed = 5f;
 
     [Tooltip("시야 거리")]
-    public float visionRange = 12f;   // 10 → 12 (sim/results/balance_v2)
+    public float visionRange = 10f;   // 10 → 12 (sim/results/balance_v2) → 10 (sim/results/saboteur_vs_bot)
 
     [Header("=== 역할 파라미터 ===")]
     [Tooltip("사보타주 인원 수")]
@@ -151,7 +161,7 @@ public class GameManager : MonoBehaviour
     [Header("=== 평가 모드 (Inspector 또는 env param) ===")]
     [Tooltip("평가 모드 여부 (한쪽 팀을 규칙봇으로 고정)")]
     public bool evalMode = false;
-    [Tooltip("규칙봇으로 고정할 팀: 0=없음(전원 ML), 1=사보타주, 2=인간팀")]
+    [Tooltip("규칙봇으로 고정할 팀: 0=없음(전원 ML), 1=사보타주, 2=인간팀, 3=전원")]
     public int frozenTeam = 0;
     private bool controlModesApplied = false;
 
@@ -166,6 +176,12 @@ public class GameManager : MonoBehaviour
     // ===== 목격 기록: 관찰자 → 부수는 걸 직접 본 캐릭터들 (에피소드 단위) =====
     private Dictionary<GameObject, HashSet<GameObject>> witnessedSaboteurs =
         new Dictionary<GameObject, HashSet<GameObject>>();
+
+    // ===== 강화 봇: 인간팀 공유 정보 (방별 마지막으로 본 안정도, 본 시각, 손상을 처음 안 시각) =====
+    private InteractionPoint[] knowledgeRooms;
+    private Dictionary<InteractionPoint, int> knowledgeIndex = new Dictionary<InteractionPoint, int>();
+    private float[] knownHealth, knownTime, knownDetect;
+    private float knowledgeTimer = 0f;
 
     [Header("=== 플레이어 ===")]
     [Tooltip("Python 트레이너와 연결된 학습 중에도 Player를 게임에 포함할지 (기본: 제외 → NPC 6명만으로 진행)")]
@@ -299,6 +315,14 @@ public class GameManager : MonoBehaviour
         if (currentState == GameState.Playing)
         {
             UpdateShipProgress();
+
+            // 강화 봇 공유 정보 갱신 (0.1초마다)
+            knowledgeTimer += Time.deltaTime;
+            if (botLevel >= 1 && knowledgeTimer >= 0.1f)
+            {
+                knowledgeTimer = 0f;
+                UpdateCrewKnowledge();
+            }
 
             // 에피소드 시간 제한 (무한 에피소드 방지)
             episodeTimer += Time.deltaTime;
@@ -542,7 +566,7 @@ public class GameManager : MonoBehaviour
     }
 
     // ===== 평가 모드: 팀별 제어 모드 적용 =====
-    // frozenTeam: 0=없음(전원 ML), 1=사보타주 고정(규칙봇), 2=인간팀 고정(규칙봇)
+    // frozenTeam: 0=없음(전원 ML), 1=사보타주 고정(규칙봇), 2=인간팀 고정(규칙봇), 3=전원 규칙봇
     // 고정된 팀은 규칙봇(NPCAIBrain)이, 나머지 팀은 학습 정책(ML)이 제어 → 학습팀의 절대 실력 측정
     void ApplyControlModes()
     {
@@ -560,6 +584,7 @@ public class GameManager : MonoBehaviour
                 bool isSab = RoleManager.Instance.IsSaboteur(ch);
                 if (frozenTeam == 1) ruleBot = isSab;        // 사보타주 팀을 규칙봇으로
                 else if (frozenTeam == 2) ruleBot = !isSab;  // 인간팀(인간+함장)을 규칙봇으로
+                else if (frozenTeam == 3) ruleBot = true;    // 전원 규칙봇 (규칙봇끼리 기준선 측정)
             }
             else if (!evalMode && botTeam != 0 && RoleManager.Instance != null)
             {
@@ -572,12 +597,99 @@ public class GameManager : MonoBehaviour
         }
 
         if (evalMode)
-            Debug.Log($"[평가 모드] frozenTeam={frozenTeam} (1=사보타주,2=인간팀) 규칙봇 고정 적용");
+            Debug.Log($"[평가 모드] frozenTeam={frozenTeam} (1=사보타주,2=인간팀,3=전원) 규칙봇 고정 적용");
     }
 
     // ===== Getter 메서드 =====
     public float GetCurrentDistance() => currentDistance;
     public bool CanShoot() => episodeTimer >= shootGraceTime;
+    public float GetEpisodeTime() => episodeTimer;
+
+    // ===== 강화 봇: 인간팀 공유 정보 =====
+    void ResetCrewKnowledge()
+    {
+        knowledgeRooms = FindObjectsOfType<InteractionPoint>();
+        System.Array.Sort(knowledgeRooms, (a, b) => a.roomIndex.CompareTo(b.roomIndex));
+        knowledgeIndex.Clear();
+        int n = knowledgeRooms.Length;
+        knownHealth = new float[n];
+        knownTime = new float[n];
+        knownDetect = new float[n];
+        for (int i = 0; i < n; i++)
+        {
+            knowledgeIndex[knowledgeRooms[i]] = i;
+            knownHealth[i] = knowledgeRooms[i].maxHealth;
+            knownTime[i] = 0f;
+            knownDetect[i] = -1f;
+        }
+        knowledgeTimer = 0f;
+    }
+
+    static float FlatDistance(Vector3 a, Vector3 b)
+    {
+        a.y = 0f; b.y = 0f;
+        return Vector3.Distance(a, b);
+    }
+
+    // 인간팀 누군가의 시야(visionRange × botPerception) 안에 있는 방, 알림이 뜬 방의 안정도를 공유한다
+    void UpdateCrewKnowledge()
+    {
+        if (knowledgeRooms == null) ResetCrewKnowledge();
+        float see = visionRange * botPerception;
+        for (int i = 0; i < knowledgeRooms.Length; i++)
+        {
+            InteractionPoint room = knowledgeRooms[i];
+            if (room == null) continue;
+            bool visible = room.IsAlerted();
+            if (!visible)
+            {
+                foreach (var ch in allCharacters)
+                {
+                    if (ch == null || !ch.activeInHierarchy) continue;
+                    if (RoleManager.Instance != null && RoleManager.Instance.IsSaboteur(ch)) continue;
+                    if (FlatDistance(ch.transform.position, room.transform.position) <= see) { visible = true; break; }
+                }
+            }
+            if (visible)
+            {
+                knownHealth[i] = room.GetCurrentHealth();
+                knownTime[i] = episodeTimer;
+            }
+            if (knownHealth[i] < room.maxHealth)
+            {
+                if (knownDetect[i] < 0f) knownDetect[i] = episodeTimer;
+            }
+            else
+            {
+                knownDetect[i] = -1f;
+            }
+        }
+    }
+
+    int KnowledgeIndex(InteractionPoint room)
+    {
+        if (knowledgeRooms == null) ResetCrewKnowledge();
+        return room != null && knowledgeIndex.TryGetValue(room, out int i) ? i : -1;
+    }
+
+    // 인간팀이 손상을 알고 있고, 대응 지연(botReaction)이 지났는가
+    public bool IsKnownDamaged(InteractionPoint room)
+    {
+        int i = KnowledgeIndex(room);
+        return i >= 0 && knownDetect[i] >= 0f && episodeTimer - knownDetect[i] >= botReaction;
+    }
+
+    public float GetKnownHealth(InteractionPoint room)
+    {
+        int i = KnowledgeIndex(room);
+        return i >= 0 ? knownHealth[i] : 100f;
+    }
+
+    public float GetKnownTime(InteractionPoint room)
+    {
+        int i = KnowledgeIndex(room);
+        return i >= 0 ? knownTime[i] : 0f;
+    }
 
     // NPC 함장 사격 규칙: 유예 시간 + 근거(목격 기록) + 사거리
     public bool CanShootTarget(GameObject shooter, GameObject target)
@@ -632,6 +744,7 @@ public class GameManager : MonoBehaviour
         repairTotal = 0;
         sabotageInterrupted = 0;
         witnessedSaboteurs.Clear();
+        ResetCrewKnowledge();
 
         // 원본에서 allCharacters 복원 (RemoveCharacter로 빠진 캐릭터 복구)
         allCharacters = new List<GameObject>(allCharactersOriginal);
@@ -762,6 +875,10 @@ public class GameManager : MonoBehaviour
         rewardWitness       = envParams.GetWithDefault("reward_witness", rewardWitness);
         rewardCaptainHit    = envParams.GetWithDefault("reward_captain_hit", rewardCaptainHit);
         botTeam             = (int)envParams.GetWithDefault("bot_team", botTeam);
+        botLevel            = (int)envParams.GetWithDefault("bot_level", botLevel);
+        botPerception       = envParams.GetWithDefault("bot_perception", botPerception);
+        botReaction         = envParams.GetWithDefault("bot_reaction", botReaction);
+        botChase            = envParams.GetWithDefault("bot_chase", botChase ? 1f : 0f) > 0.5f;
         commitMove          = envParams.GetWithDefault("commit_move", commitMove ? 1f : 0f) > 0.5f;
         autoRepair          = envParams.GetWithDefault("auto_repair", autoRepair ? 1f : 0f) > 0.5f;
         spawnSpread         = envParams.GetWithDefault("spawn_spread", spawnSpread ? 1f : 0f) > 0.5f;
