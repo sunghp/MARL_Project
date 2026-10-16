@@ -27,6 +27,7 @@ def main():
     ap.add_argument("--palette", action="store_true", help="실행 순서대로 색 지정 (이름 첫 글자 대신)")
     ap.add_argument("--max-steps", type=float, default=None, help="이 스텝(M)까지만 사용")
     ap.add_argument("--png", default="learning_curves.png")
+    ap.add_argument("--plain-labels", action="store_true", help="범례에 시드 번호를 붙이지 않음 (실행마다 이름을 직접 줄 때)")
     args = ap.parse_args()
     os.makedirs(args.out, exist_ok=True)
     refs = json.load(open(args.ref, encoding="utf-8")) if args.ref else {}
@@ -51,7 +52,7 @@ def main():
             if args.max_steps:
                 keep = x <= args.max_steps
                 x, tg = x[keep], [g for g, k in zip(tg, keep) if k]
-            lab = f"{label} (시드 {i})"
+            lab = label if args.plain_labels else f"{label} (시드 {i})"
             ls = "-" if i == 0 else "--"
             w = args.window
             ax_win.plot(x, rolling([1 - g["human_win"] for g in tg], w), ls, color=color, label=lab)

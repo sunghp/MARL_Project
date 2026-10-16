@@ -1,0 +1,62 @@
+{
+ "A_s0": {
+  "games": 6796,
+  "steps": 7.996074,
+  "sab_win_last500": 0.294,
+  "sab_last500": 18.7,
+  "seen_sab_last500": 1.03,
+  "executed_last500": 1.21,
+  "destroy_last500": 0.294,
+  "entropy_last": 1.34
+ },
+ "B_s0": {
+  "games": 6729,
+  "steps": 7.993199,
+  "sab_win_last500": 0.336,
+  "sab_last500": 19.15,
+  "seen_sab_last500": 1.08,
+  "executed_last500": 1.24,
+  "destroy_last500": 0.336,
+  "entropy_last": 1.29
+ },
+ "C_s0": {
+  "games": 6938,
+  "steps": 7.998785,
+  "sab_win_last500": 0.256,
+  "sab_last500": 20.38,
+  "seen_sab_last500": 0.96,
+  "executed_last500": 1.09,
+  "destroy_last500": 0.256,
+  "entropy_last": 1.45
+ },
+ "D_s0": {
+  "games": 6775,
+  "steps": 7.995461,
+  "sab_win_last500": 0.276,
+  "sab_last500": 19.62,
+  "seen_sab_last500": 1.14,
+  "executed_last500": 1.24,
+  "destroy_last500": 0.276,
+  "entropy_last": 1.28
+ },
+ "E_s0": {
+  "games": 6894,
+  "steps": 7.999209,
+  "sab_win_last500": 0.272,
+  "sab_last500": 18.97,
+  "seen_sab_last500": 1.1,
+  "executed_last500": 1.25,
+  "destroy_last500": 0.272,
+  "entropy_last": 1.26
+ },
+ "F_s0": {
+  "games": 6781,
+  "steps": 7.998675,
+  "sab_win_last500": 0.214,
+  "sab_last500": 19.37,
+  "seen_sab_last500": 1.0,
+  "executed_last500": 1.22,
+  "destroy_last500": 0.214,
+  "entropy_last": 1.43
+ }
+}

@@ -1,0 +1,4 @@
+현재최종_8M {"games": 500, "sab_win": 0.392, "dur": 75.17, "sab": 19.25, "hidden": 17.84, "rep": 5.86, "cut": 1.76, "shots": 1.22, "hit": 1.0, "destroy": 0.392}
+E2_s4_ep5400 {"games": 500, "sab_win": 0.282, "dur": 77.18, "sab": 18.58, "hidden": 17.38, "rep": 6.37, "cut": 0.85, "shots": 1.38, "hit": 1.0, "destroy": 0.282}
+E2_s1_ep4000 {"games": 500, "sab_win": 0.394, "dur": 79.23, "sab": 19.18, "hidden": 18.06, "rep": 5.99, "cut": 0.83, "shots": 1.15, "hit": 1.0, "destroy": 0.394}
+E2_s1_ep4050 {"games": 500, "sab_win": 0.386, "dur": 77.27, "sab": 18.95, "hidden": 17.86, "rep": 6.02, "cut": 1.04, "shots": 1.22, "hit": 1.0, "destroy": 0.386}

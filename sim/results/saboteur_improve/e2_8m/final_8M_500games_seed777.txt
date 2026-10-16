@@ -1,0 +1,6 @@
+e2x_s0_c {"games": 500, "sab_win": 0.236, "dur": 84.06, "sab": 17.71, "hidden": 16.64, "rep": 6.26, "cut": 0.7, "shots": 1.24, "hit": 1.0, "destroy": 0.236}
+e2x_s1_c {"games": 500, "sab_win": 0.35, "dur": 76.24, "sab": 19.28, "hidden": 18.15, "rep": 6.17, "cut": 0.78, "shots": 1.24, "hit": 1.0, "destroy": 0.35}
+e2x_s2 {"games": 500, "sab_win": 0.176, "dur": 90.3, "sab": 20.28, "hidden": 19.39, "rep": 7.66, "cut": 0.61, "shots": 1.09, "hit": 1.0, "destroy": 0.176}
+e2x_s3 {"games": 500, "sab_win": 0.234, "dur": 86.14, "sab": 20.19, "hidden": 19.14, "rep": 7.38, "cut": 0.67, "shots": 1.16, "hit": 1.0, "destroy": 0.234}
+e2x_s4 {"games": 500, "sab_win": 0.22, "dur": 85.86, "sab": 19.6, "hidden": 18.51, "rep": 7.18, "cut": 0.69, "shots": 1.2, "hit": 1.0, "destroy": 0.22}
+e2x_s5 {"games": 500, "sab_win": 0.24, "dur": 84.51, "sab": 19.13, "hidden": 18.15, "rep": 6.9, "cut": 0.59, "shots": 1.17, "hit": 1.0, "destroy": 0.24}
