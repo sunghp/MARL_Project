@@ -28,6 +28,10 @@ ap.add_argument("--entropy-coef", type=float, default=None, help="PPO 엔트로�
 ap.add_argument("--entropy-role", action="append", default=[],
                 help="역할별 엔트로피 계수 role=value (예: saboteur=0.003), 여러 번 지정 가능")
 ap.add_argument("--lr-actor", type=float, default=None, help="Actor 학습률 덮어쓰기 (기본 CONFIG 1e-4)")
+ap.add_argument("--action-mask", action="store_true", help="역할별로 효과 없는 상호작용을 막음")
+ap.add_argument("--min-update-samples", type=int, default=None, help="이 샘플 수가 모일 때까지 여러 판을 묶어 업데이트")
+ap.add_argument("--actor-freeze-steps", type=int, default=None, help="이 스텝까지 Actor 고정, Critic만 학습")
+ap.add_argument("--reset-steps", action="store_true", help="--load 후 스텝/에피소드 수를 0으로 (모방학습 체크포인트에서 시작)")
 ap.add_argument("--load", default=None, help="이어서 학습할 체크포인트(.pt) 경로 (total_steps, 옵티마이저 상태 포함 복원)")
 ap.add_argument("--curriculum", default=None,
                 help="규칙봇 커리큘럼 bot_team:start:end:decay_steps (예: 1:1.0:0.3:500000)")
@@ -70,6 +74,12 @@ if args.eval_episodes:
     cfg["eval_episodes"] = args.eval_episodes
 if args.entropy_coef is not None:
     cfg["entropy_coef"] = args.entropy_coef
+if args.action_mask:
+    cfg["action_mask"] = True
+if args.min_update_samples is not None:
+    cfg["min_update_samples"] = args.min_update_samples
+if args.actor_freeze_steps is not None:
+    cfg["actor_freeze_steps"] = args.actor_freeze_steps
 if args.lr_actor is not None:
     cfg["lr_actor"] = args.lr_actor
 if args.entropy_role:
@@ -82,4 +92,8 @@ if args.curriculum:
 trainer = mappo_trainer.MAPPOTrainer(cfg)
 if args.load:
     trainer.load(os.path.abspath(args.load) if not os.path.isabs(args.load) else args.load)
+    if args.reset_steps:
+        trainer.total_steps = 0
+        trainer.episode_count = 0
+        trainer.next_eval_step = cfg["eval_interval"]
 trainer.train()

@@ -63,6 +63,9 @@ CONFIG = {
     "clip_epsilon": 0.2,          # PPO 클리핑
     "entropy_coef": 0.01,         # 엔트로피 보너스 (탐색 장려)
     "entropy_coef_by_role": {},   # 역할별 덮어쓰기. 예: {"saboteur": 0.003}
+    "action_mask": False,         # True: 역할별로 효과 없는 상호작용을 막음 (ROLE_VALID_INTERACTIONS). 체크포인트에 저장됨
+    "min_update_samples": 0,      # >0: 끝난 게임의 데이터를 이만큼 모일 때까지 모아서 한 번에 업데이트
+    "actor_freeze_steps": 0,      # 이 스텝까지는 Actor를 고정하고 Critic만 학습 (모방학습으로 시작할 때 Critic 예열)
     "value_coef": 0.5,            # 가치 손실 가중치
     "max_grad_norm": 0.5,         # 그래디언트 클리핑
 
@@ -101,14 +104,25 @@ CONFIG = {
 # Actor 네트워크 (역할별 정책)
 # ================================================================
 
+# 역할별로 효과가 있는 상호작용 (0 없음, 1 부수기, 2 수리, 3~8 슬롯 사격)
+# 사보타주의 수리는 실제로 방을 고치므로(자기 팀에 손해) 막는다.
+ROLE_VALID_INTERACTIONS = {
+    "saboteur": [0, 1],
+    "human": [0, 2],
+    "captain": [0, 2, 3, 4, 5, 6, 7, 8],
+}
+
+
 class Actor(nn.Module):
     """
     로컬 관측(64차원)을 받아서 행동 확률을 출력.
     행동 브랜치가 2개(방 선택, 상호작용)이므로 헤드도 2개.
+    valid: 브랜치별 허용 행동 목록 (None이면 전부 허용). 허용 안 된 행동은 logit을 -1e9로.
     """
 
-    def __init__(self, obs_dim, action_branches, hidden_dim, num_layers=2):
+    def __init__(self, obs_dim, action_branches, hidden_dim, num_layers=2, valid=None):
         super().__init__()
+        self.action_branches = list(action_branches)
 
         # 공유 레이어
         layers = []
@@ -127,6 +141,14 @@ class Actor(nn.Module):
 
         # 가중치 초기화
         self._init_weights()
+        self.set_valid(valid)
+
+    def set_valid(self, valid):
+        """브랜치별 허용 행동 설정 (state_dict에는 저장하지 않음 → 이전 체크포인트와 호환)"""
+        for i, size in enumerate(self.action_branches):
+            allowed = None if valid is None or valid[i] is None else set(valid[i])
+            m = torch.tensor([allowed is None or a in allowed for a in range(size)], dtype=torch.bool)
+            self.register_buffer(f"valid_{i}", m, persistent=False)
 
     def _init_weights(self):
         for m in self.modules():
@@ -138,9 +160,16 @@ class Actor(nn.Module):
             nn.init.orthogonal_(head.weight, gain=0.01)
 
     def forward(self, obs):
-        """logits 리스트 반환 (브랜치별)"""
+        """logits 리스트 반환 (브랜치별). 허용 안 된 행동은 -1e9"""
         x = self.shared(obs)
-        return [head(x) for head in self.heads]
+        out = []
+        for i, head in enumerate(self.heads):
+            logits = head(x)
+            m = getattr(self, f"valid_{i}")
+            if not bool(m.all()):
+                logits = logits.masked_fill(~m, -1e9)
+            out.append(logits)
+        return out
 
     def get_action(self, obs):
         """행동 샘플링 + log_prob 반환"""
@@ -177,6 +206,14 @@ class Actor(nn.Module):
             torch.stack(log_probs, dim=-1).sum(dim=-1),
             torch.stack(entropies, dim=-1).sum(dim=-1),
         )
+
+
+def make_actor(role, action_mask=False, config=None):
+    """역할별 Actor 생성. action_mask=True면 ROLE_VALID_INTERACTIONS 적용 (체크포인트의 "action_mask" 값을 넘긴다)"""
+    config = config or CONFIG
+    valid = [None, ROLE_VALID_INTERACTIONS[role]] if action_mask else None
+    return Actor(config["local_obs_dim"], config["action_branches"], config["hidden_dim"],
+                 config["num_layers"], valid=valid)
 
 
 # ================================================================
@@ -321,18 +358,8 @@ class MAPPOTrainer:
 
         # --- 역할별 Actor ---
         self.actors = {
-            "human": Actor(
-                config["local_obs_dim"], config["action_branches"],
-                config["hidden_dim"], config["num_layers"]
-            ).to(self.device),
-            "saboteur": Actor(
-                config["local_obs_dim"], config["action_branches"],
-                config["hidden_dim"], config["num_layers"]
-            ).to(self.device),
-            "captain": Actor(
-                config["local_obs_dim"], config["action_branches"],
-                config["hidden_dim"], config["num_layers"]
-            ).to(self.device),
+            role: make_actor(role, config.get("action_mask", False), config).to(self.device)
+            for role in ("human", "saboteur", "captain")
         }
 
         # --- 팀별 Centralized Critic ---
@@ -376,6 +403,7 @@ class MAPPOTrainer:
         self.eval_ep_count = 0      # 현재 매치업에서 집계된 평가 에피소드 수
         self.next_eval_step = self.config["eval_interval"]  # 다음 평가 트리거 스텝
         self.fixed_bot_team = 0     # yaml bot_team (커리큘럼 없을 때): 항상 규칙봇인 팀
+        self.pending_roles = {}     # 지난 게임에서 업데이트를 미룬 버퍼의 (역할, 팀) (min_update_samples)
 
         # --- TensorBoard ---
         self.writer = SummaryWriter(config["log_dir"])
@@ -488,8 +516,9 @@ class MAPPOTrainer:
             if len(buffer) == 0:
                 continue
 
-            role = self.agent_roles.get(agent_id)
-            team = self.agent_teams.get(agent_id)
+            role, team = self.agent_roles.get(agent_id), self.agent_teams.get(agent_id)
+            if role is None and agent_id in self.pending_roles:
+                role, team = self.pending_roles[agent_id]
             if role is None or team is None:
                 continue
 
@@ -515,8 +544,9 @@ class MAPPOTrainer:
             team_data[team].append(tensors)
 
         # --- Actor 업데이트 (역할별) ---
+        freeze_actor = self.total_steps < config.get("actor_freeze_steps", 0)
         for role, data_list in role_data.items():
-            if len(data_list) == 0:
+            if len(data_list) == 0 or freeze_actor:
                 continue
 
             # 모든 에이전트 데이터 합치기
@@ -634,6 +664,7 @@ class MAPPOTrainer:
         checkpoint = {
             "episode": self.episode_count,
             "total_steps": self.total_steps,
+            "action_mask": bool(self.config.get("action_mask", False)),
         }
 
         for role, actor in self.actors.items():
@@ -653,15 +684,25 @@ class MAPPOTrainer:
         self.episode_count = checkpoint.get("episode", 0)
         self.total_steps = checkpoint.get("total_steps", 0)
 
+        # 체크포인트가 행동 막기로 학습됐으면 그대로 따른다
+        if checkpoint.get("action_mask", False) != bool(self.config.get("action_mask", False)):
+            self.config["action_mask"] = bool(checkpoint.get("action_mask", False))
+            for role, actor in self.actors.items():
+                actor.set_valid([None, ROLE_VALID_INTERACTIONS[role]] if self.config["action_mask"] else None)
+                actor.to(self.device)
+            print(f"[불러오기] 체크포인트의 action_mask={self.config['action_mask']} 적용")
+
         for role, actor in self.actors.items():
             if f"actor_{role}" in checkpoint:
                 actor.load_state_dict(checkpoint[f"actor_{role}"])
-                self.actor_optimizers[role].load_state_dict(checkpoint[f"actor_opt_{role}"])
+                if f"actor_opt_{role}" in checkpoint:     # 모방학습 체크포인트에는 옵티마이저가 없다
+                    self.actor_optimizers[role].load_state_dict(checkpoint[f"actor_opt_{role}"])
 
         for team, critic in self.critics.items():
             if f"critic_{team}" in checkpoint:
                 critic.load_state_dict(checkpoint[f"critic_{team}"])
-                self.critic_optimizers[team].load_state_dict(checkpoint[f"critic_opt_{team}"])
+                if f"critic_opt_{team}" in checkpoint:
+                    self.critic_optimizers[team].load_state_dict(checkpoint[f"critic_opt_{team}"])
 
         print(f"[불러오기] {path} (에피소드: {self.episode_count})")
 
@@ -759,6 +800,7 @@ class MAPPOTrainer:
         episode_start_time = time.time()
         terminated_agents = set()
         died_early = set()         # 게임 종료 전에 죽어서 terminal을 먼저 받은 에이전트
+        keep_episode_data = False  # min_update_samples: 이번 게임 데이터를 다음 업데이트까지 보관
 
         try:
             while self.total_steps < config["total_timesteps"]:
@@ -861,9 +903,12 @@ class MAPPOTrainer:
                                 del self.buffers[aid]
                                 self.episode_rewards.pop(aid, None)
 
-                        has_data = any(len(buf) > 0 for buf in self.buffers.values())
-                        if has_data:
+                        n_ready = sum(len(buf) for buf in self.buffers.values())
+                        if n_ready > 0 and n_ready >= config.get("min_update_samples", 0):
                             self.update()
+                            self.pending_roles.clear()
+                        elif n_ready > 0:
+                            keep_episode_data = True        # 여러 판 모아서 업데이트
 
                         total_ep_reward = sum(self.episode_rewards.values())
 
@@ -942,7 +987,23 @@ class MAPPOTrainer:
 
                     # 초기화
                     self.episode_rewards.clear()
-                    self.buffers.clear()
+                    if keep_episode_data:
+                        # 이번 게임 데이터를 다음 업데이트까지 보관.
+                        # 에이전트 id는 다음 게임에도 다시 쓰이므로(역할은 바뀔 수 있음) (게임 번호, id) 키로 옮긴다.
+                        for aid in list(self.agent_roles):
+                            buf = self.buffers.pop(aid, None)
+                            if buf is not None and len(buf) > 0:
+                                key = (self.episode_count, aid)
+                                self.buffers[key] = buf
+                                self.pending_roles[key] = (self.agent_roles[aid], self.agent_teams[aid])
+                        for aid in [a for a, b in self.buffers.items() if len(b) == 0]:
+                            del self.buffers[aid]
+                    else:
+                        for aid in list(self.agent_roles):
+                            self.buffers.pop(aid, None)
+                        for aid in [a for a, b in self.buffers.items() if len(b) == 0 and a not in self.pending_roles]:
+                            del self.buffers[aid]
+                    keep_episode_data = False
                     terminated_agents.clear()
                     died_early.clear()
                     episode_start_time = time.time()
@@ -1080,9 +1141,16 @@ if __name__ == "__main__":
                         help="밸런스 yaml 경로 (기본 config/TheThing.yaml, 공동 학습: config/TheThing_selfplay_v4.yaml)")
     parser.add_argument("--entropy-role", action="append", default=[],
                         help="역할별 엔트로피 계수 role=value (예: saboteur=0.003)")
+    parser.add_argument("--action-mask", action="store_true", help="역할별로 효과 없는 상호작용을 막음")
+    parser.add_argument("--min-update-samples", type=int, default=None,
+                        help="이 샘플 수가 모일 때까지 여러 판을 묶어 업데이트 (예: 4096)")
     args = parser.parse_args()
 
     # 커맨드라인 인자로 설정 덮어쓰기
+    if args.action_mask:
+        CONFIG["action_mask"] = True
+    if args.min_update_samples is not None:
+        CONFIG["min_update_samples"] = args.min_update_samples
     if args.balance_yaml:
         CONFIG["balance_yaml"] = args.balance_yaml
     if args.entropy_role:

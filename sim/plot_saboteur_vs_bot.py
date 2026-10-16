@@ -15,6 +15,8 @@ import numpy as np
 
 from analyze import COLORS, bot_train_games, load_games, load_tb, plt, rolling, train_step_axis
 
+PALETTE = ["#8a8a8a", "#2e86ab", "#d1495b", "#3b8b3b", "#8f5fbf", "#e08a00"]
+
 
 def main():
     ap = argparse.ArgumentParser()
@@ -22,6 +24,9 @@ def main():
     ap.add_argument("--ref", default=None)
     ap.add_argument("--out", required=True)
     ap.add_argument("--window", type=int, default=200)
+    ap.add_argument("--palette", action="store_true", help="실행 순서대로 색 지정 (이름 첫 글자 대신)")
+    ap.add_argument("--max-steps", type=float, default=None, help="이 스텝(M)까지만 사용")
+    ap.add_argument("--png", default="learning_curves.png")
     args = ap.parse_args()
     os.makedirs(args.out, exist_ok=True)
     refs = json.load(open(args.ref, encoding="utf-8")) if args.ref else {}
@@ -29,18 +34,23 @@ def main():
     fig, axes = plt.subplots(2, 2, figsize=(13, 9))
     (ax_win, ax_sab), (ax_dead, ax_ent) = axes
     summary = {}
+    run_i = 0
     for spec in args.run:
         name, dirs = spec.split("=", 1)
         label = name
         if ":" in name:
             name, label = name.split(":", 1)
-        color = COLORS.get(name[0], None)
+        color = PALETTE[run_i % len(PALETTE)] if args.palette else COLORS.get(name[0], None)
+        run_i += 1
         for i, d in enumerate(dirs.split(",")):
             games = load_games(d)
             tg = bot_train_games(games)
             x = train_step_axis(games, bot=True) / 1e6
             n = min(len(x), len(tg))
             x, tg = x[:n], tg[:n]
+            if args.max_steps:
+                keep = x <= args.max_steps
+                x, tg = x[keep], [g for g, k in zip(tg, keep) if k]
             lab = f"{label} (시드 {i})"
             ls = "-" if i == 0 else "--"
             w = args.window
@@ -51,6 +61,8 @@ def main():
             ax_dead.plot(x, rolling([g["shots_hit"] for g in tg], w), ls, color=color, label=f"{lab} 처형된 사보타주")
             tb = load_tb(d)
             ent = tb.get("policy/entropy_saboteur", [])
+            if args.max_steps:
+                ent = [e for e in ent if e[0] / 1e6 <= args.max_steps]
             if ent:
                 ent.sort()
                 ax_ent.plot([s / 1e6 for s, _ in ent], rolling([v for _, v in ent], 50), ls, color=color, label=lab)
@@ -83,8 +95,8 @@ def main():
     ax_win.legend(fontsize=8, loc="upper left", bbox_to_anchor=(0.0, 0.93))
     ax_ent.legend(fontsize=8)
     fig.tight_layout()
-    fig.savefig(os.path.join(args.out, "learning_curves.png"), dpi=110)
-    with open(os.path.join(args.out, "summary.json"), "w", encoding="utf-8") as f:
+    fig.savefig(os.path.join(args.out, args.png), dpi=110)
+    with open(os.path.join(args.out, args.png.replace(".png", "_summary.json") if args.png != "learning_curves.png" else "summary.json"), "w", encoding="utf-8") as f:
         json.dump(summary, f, ensure_ascii=False, indent=1)
     print(json.dumps(summary, ensure_ascii=False, indent=1))
 

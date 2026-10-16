@@ -30,7 +30,7 @@ sys.path.insert(0, os.path.join(HERE, "fake_mlagents"))
 sys.path.insert(0, ROOT)
 
 import thething_sim as ts  # noqa: E402
-from mappo_trainer import CONFIG, Actor  # noqa: E402
+from mappo_trainer import CONFIG, make_actor  # noqa: E402
 
 ROLE_NAME = {ts.HUMAN: "crew", ts.SABOTEUR: "saboteur", ts.CAPTAIN: "captain"}
 
@@ -252,7 +252,7 @@ if __name__ == "__main__":
     ck = torch.load(args.checkpoint, map_location="cpu")
     actors = {}
     for role in ("human", "saboteur", "captain"):
-        a = Actor(CONFIG["local_obs_dim"], CONFIG["action_branches"], CONFIG["hidden_dim"], CONFIG["num_layers"])
+        a = make_actor(role, ck.get("action_mask", False))
         a.load_state_dict(ck[f"actor_{role}"])
         a.eval()
         actors[role] = a

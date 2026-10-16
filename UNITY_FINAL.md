@@ -44,6 +44,7 @@
 | 방 하나 0% → 즉시 패배 `room_destroy_loss` | 켬 |
 | 보상 셰이핑 `reward_*` | 0 (끔) |
 | 트레이너: 사보타주 엔트로피 계수 | **0.003** (`--entropy-role saboteur=0.003`, 기본 0.01로는 4M에서 6~12%) |
+| 사보타주 관측 v2 `sab_obs` / 목격 페널티 `reward_sab_witnessed` | 0 / 0 (실험했지만 이득 없음, `sim/results/saboteur_improve`. 최종 모델은 v1 관측으로 학습됨) |
 
 ## Unity 설정 체크리스트
 

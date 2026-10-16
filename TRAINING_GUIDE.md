@@ -113,6 +113,11 @@ python mappo_trainer.py --env-path "Builds/Windows/My project.exe" --timesteps 8
 
 - 시뮬레이터에서는 8M 스텝에서 시드에 따라 15~41%가 나왔다. 시드 2개 이상을 돌리고 좋은 쪽을 고른다.
 - `./scripts/train.sh`는 엔트로피 옵션을 넘기지 않는다. 위 명령을 직접 쓴다.
+- 실험용 옵션 (기본 꺼짐, 효과는 `sim/results/saboteur_improve/REPORT.md`)
+  - `--action-mask`: 역할별로 효과 없는 상호작용을 막음
+  - `--min-update-samples 4096`: 여러 판을 모아 한 번에 업데이트. 시드 편차가 가장 작았다
+  - yaml `sab_obs: 1` / `reward_sab_witnessed: -1`: 사보타주 관측 v2 / 목격 페널티. 이득이 확인되지 않았다
+    - 관측을 바꾸면 이전 모델과 호환되지 않는다. 관측과 체크포인트를 같은 설정으로 맞춘다
 
 - 결과 위치
   - 체크포인트: `checkpoints/mappo_ep<에피소드>.pt` (50 에피소드마다)

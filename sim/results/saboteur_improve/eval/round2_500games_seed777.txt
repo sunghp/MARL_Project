@@ -1,0 +1,4 @@
+E4_s0 {"games": 500, "sab_win": 0.244, "dur": 83.32, "sab": 15.37, "hidden": 14.26, "rep": 5.36, "cut": 1.39, "shots": 1.24, "hit": 1.0, "destroy": 0.244}
+E4_s1 {"games": 500, "sab_win": 0.048, "dur": 90.93, "sab": 13.16, "hidden": 12.19, "rep": 6.34, "cut": 0.82, "shots": 1.2, "hit": 1.0, "destroy": 0.048}
+E5_s0 {"games": 500, "sab_win": 0.216, "dur": 77.14, "sab": 15.53, "hidden": 14.49, "rep": 5.47, "cut": 0.83, "shots": 1.28, "hit": 1.0, "destroy": 0.216}
+E5_s1 {"games": 500, "sab_win": 0.288, "dur": 72.26, "sab": 15.7, "hidden": 14.3, "rep": 4.87, "cut": 1.89, "shots": 1.41, "hit": 1.0, "destroy": 0.288}

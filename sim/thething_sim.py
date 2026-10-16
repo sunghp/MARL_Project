@@ -97,6 +97,9 @@ DEFAULT_PARAMS = {
     "bot_perception": 1.0,             # 방 상태를 아는 거리 = vision_range × 이 값
     "bot_reaction": 0.0,               # 손상을 안 뒤 대응하기까지 지연(초)
     "bot_chase": 1.0,                  # 1: 함장이 근거 있는 대상을 쫓아감
+    # 사보타주 관측/보상 개선 (기본값 = 이전 동작)
+    "sab_obs": 0.0,                    # 1: 사보타주 관측 v2 (목격당함 표시, 함장/동료 표시, 동료 시야 공유). 관측 크기는 같음
+    "reward_sab_witnessed": 0.0,       # 사보타주가 이번 게임에서 처음 목격될 때 보상 (음수 = 페널티)
     "eval_mode": 0.0,
     "frozen_team": 0.0,
 }
@@ -235,6 +238,7 @@ class TheThingWorld:
         self.sab_interrupted = 0
         self.witness_events = 0
         self.witnessed = {}
+        self.flagged = set()                   # 이번 게임에서 인간팀에게 목격된 사보타주
         self.alive = list(self.chars)          # allCharacters (사망 시 제거)
         for r in self.rooms:
             r.reset()
@@ -429,13 +433,23 @@ class TheThingWorld:
         is_sab = 1.0 if self.role[c.idx] == SABOTEUR else 0.0
         is_cap = 1.0 if self.role[c.idx] == CAPTAIN else 0.0
         pos3 = [c.pos[0] / MAP_SIZE, POS_Y / MAP_SIZE, c.pos[1] / MAP_SIZE]
+        # 사보타주 관측 v2: 높이 칸(항상 상수)을 "내가 목격당했음"으로, 칸별 목격 칸(사보타주는 항상 0)을
+        # 역할 표시(함장 1, 동료 -1)로 쓰고, 살아 있는 동료의 시야도 내 시야로 친다
+        v2 = is_sab and self.p("sab_obs") > 0.5
+        eyes = [c]
+        if v2:
+            eyes += [o for o in self.saboteurs if o is not c and o.active]
+            pos3[1] = 1.0 if c.idx in self.flagged else 0.0
+
+        def seen_by_team(pos):
+            return any(dist(e.pos, pos) <= vis for e in eyes)
         game = [self.avg_health / 100.0, self.distance / self.p("total_distance"), self.alive_human_ratio()]
         local = [is_sab, is_cap] + pos3 + game
         glob = [is_sab, is_cap] + pos3 + game
         for r in self.rooms:
             d = dist(c.pos, r.pos)
             local.append(d / MAP_SIZE)
-            if d <= vis or r.health <= self.p("alert_threshold"):
+            if (d <= vis or (v2 and seen_by_team(r.pos))) or r.health <= self.p("alert_threshold"):
                 local += [r.health / 100.0, 1.0 if r.used_by is not None else 0.0, 1.0]
             else:
                 local += [0.0, 0.0, 0.0]
@@ -443,11 +457,15 @@ class TheThingWorld:
         seen = self.witnessed.get(c.idx, ())
         for o in self._other_slots(c):
             alive = o.active
-            visible = alive and dist(c.pos, o.pos) <= vis
+            visible = alive and (dist(c.pos, o.pos) <= vis or (v2 and seen_by_team(o.pos)))
+            if v2:
+                hint = 1.0 if self.role[o.idx] == CAPTAIN else (-1.0 if self.role[o.idx] == SABOTEUR else 0.0)
+            else:
+                hint = 1.0 if (alive and o.idx in seen) else 0.0
             local += [o.pos[0] / MAP_SIZE if visible else 0.0,
                       o.pos[1] / MAP_SIZE if visible else 0.0,
                       1.0 if visible else 0.0,
-                      1.0 if (alive and o.idx in seen) else 0.0]
+                      hint if alive else 0.0]
             glob += [o.pos[0] / MAP_SIZE if alive else 0.0,
                      o.pos[1] / MAP_SIZE if alive else 0.0,
                      1.0 if alive else 0.0,
@@ -612,6 +630,10 @@ class TheThingWorld:
             if dist(sab.pos, o.pos) <= vis:
                 n += 1
                 if record:
+                    if sab.idx not in self.flagged:
+                        self.flagged.add(sab.idx)
+                        if sab.use_ml:
+                            sab.agent.reward += self.p("reward_sab_witnessed")
                     if sab.idx not in self.witnessed.get(o.idx, ()):
                         self.witness_events += 1
                         if o.use_ml:

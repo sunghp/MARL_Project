@@ -16,7 +16,7 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(HERE, "fake_mlagents"))
 sys.path.insert(0, os.path.dirname(HERE))
 import thething_sim as ts  # noqa: E402
-from mappo_trainer import CONFIG, Actor  # noqa: E402
+from mappo_trainer import CONFIG, make_actor  # noqa: E402
 
 ckpt_path = sys.argv[1]
 n_games = int(sys.argv[2]) if len(sys.argv) > 2 and not sys.argv[2].startswith("--") else 50
@@ -29,7 +29,7 @@ for a in sys.argv[2:]:
 ck = torch.load(ckpt_path, map_location="cpu")
 actors = {}
 for role in ("human", "saboteur", "captain"):
-    act = Actor(CONFIG["local_obs_dim"], CONFIG["action_branches"], CONFIG["hidden_dim"], CONFIG["num_layers"])
+    act = make_actor(role, ck.get("action_mask", False))
     act.load_state_dict(ck[f"actor_{role}"])
     act.eval()
     actors[role] = act

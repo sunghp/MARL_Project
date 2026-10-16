@@ -1,0 +1,82 @@
+{
+ "C_s0": {
+  "games": 3302,
+  "steps": 3.99788,
+  "sab_win_last500": 0.342,
+  "sab_last500": 17.73,
+  "seen_sab_last500": 1.11,
+  "executed_last500": 1.19,
+  "destroy_last500": 0.342,
+  "entropy_last": 1.21
+ },
+ "C_s1": {
+  "games": 3412,
+  "steps": 3.996126,
+  "sab_win_last500": 0.28,
+  "sab_last500": 17.92,
+  "seen_sab_last500": 1.2,
+  "executed_last500": 1.24,
+  "destroy_last500": 0.28,
+  "entropy_last": 1.04
+ },
+ "E5_s0": {
+  "games": 3496,
+  "steps": 3.997203,
+  "sab_win_last500": 0.214,
+  "sab_last500": 16.11,
+  "seen_sab_last500": 1.19,
+  "executed_last500": 1.32,
+  "destroy_last500": 0.214,
+  "entropy_last": 1.25
+ },
+ "E5_s1": {
+  "games": 3477,
+  "steps": 3.996043,
+  "sab_win_last500": 0.216,
+  "sab_last500": 16.6,
+  "seen_sab_last500": 1.25,
+  "executed_last500": 1.41,
+  "destroy_last500": 0.216,
+  "entropy_last": 0.86
+ },
+ "E2_s0": {
+  "games": 3206,
+  "steps": 3.996035,
+  "sab_win_last500": 0.288,
+  "sab_last500": 18.1,
+  "seen_sab_last500": 1.09,
+  "executed_last500": 1.24,
+  "destroy_last500": 0.288,
+  "entropy_last": 1.39
+ },
+ "E2_s1": {
+  "games": 3179,
+  "steps": 3.995317,
+  "sab_win_last500": 0.3,
+  "sab_last500": 17.96,
+  "seen_sab_last500": 1.1,
+  "executed_last500": 1.23,
+  "destroy_last500": 0.3,
+  "entropy_last": 1.35
+ },
+ "E3_s0": {
+  "games": 2964,
+  "steps": 3.995671,
+  "sab_win_last500": 0.072,
+  "sab_last500": 22.6,
+  "seen_sab_last500": 0.98,
+  "executed_last500": 1.02,
+  "destroy_last500": 0.072,
+  "entropy_last": 1.31
+ },
+ "E3_s1": {
+  "games": 3013,
+  "steps": 3.996217,
+  "sab_win_last500": 0.066,
+  "sab_last500": 21.61,
+  "seen_sab_last500": 0.94,
+  "executed_last500": 1.09,
+  "destroy_last500": 0.066,
+  "entropy_last": 1.35
+ }
+}

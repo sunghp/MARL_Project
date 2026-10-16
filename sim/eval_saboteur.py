@@ -31,7 +31,7 @@ sys.path.insert(0, ROOT)
 
 import bot_ladder  # noqa: E402
 from bot_ladder import yaml_params  # noqa: E402
-from mappo_trainer import CONFIG, Actor  # noqa: E402
+from mappo_trainer import CONFIG, make_actor  # noqa: E402
 
 VARIANTS = {
     "bot": {},
@@ -47,7 +47,7 @@ def load_actors(path, roles):
     ck = torch.load(path, map_location="cpu")
     out = {}
     for role in roles:
-        a = Actor(CONFIG["local_obs_dim"], CONFIG["action_branches"], CONFIG["hidden_dim"], CONFIG["num_layers"])
+        a = make_actor(role, ck.get("action_mask", False))
         a.load_state_dict(ck[f"actor_{role}"])
         a.eval()
         out[role] = a

@@ -97,6 +97,12 @@ public class GameManager : MonoBehaviour
     [Tooltip("함장 봇이 근거 있는 대상을 쫓아감")]
     public bool botChase = true;
 
+    [Header("=== 사보타주 관측/보상 (env param sab_obs, reward_sab_witnessed) ===")]
+    [Tooltip("사보타주 관측 v2: 목격당함 표시, 함장/동료 표시, 동료 시야 공유 (관측 크기 동일)")]
+    public bool sabObsV2 = false;   // 실험에서 이득이 확인되지 않아 끔 (sim/results/saboteur_improve). 최종 모델은 v1 관측
+    [Tooltip("사보타주가 이번 게임에서 처음 목격될 때 보상 (음수 = 페널티)")]
+    public float rewardSabWitnessed = 0f;
+
     [Header("=== 상호작용 파라미터 ===")]
     [Tooltip("부수기 시간 (초)")]
     public float sabotageTime = 3f;
@@ -176,6 +182,9 @@ public class GameManager : MonoBehaviour
     // ===== 목격 기록: 관찰자 → 부수는 걸 직접 본 캐릭터들 (에피소드 단위) =====
     private Dictionary<GameObject, HashSet<GameObject>> witnessedSaboteurs =
         new Dictionary<GameObject, HashSet<GameObject>>();
+    // 이번 게임에서 인간팀에게 한 번이라도 목격된 사보타주
+    private HashSet<GameObject> flaggedSaboteurs = new HashSet<GameObject>();
+    public bool IsFlagged(GameObject saboteur) => saboteur != null && flaggedSaboteurs.Contains(saboteur);
 
     // ===== 강화 봇: 인간팀 공유 정보 (방별 마지막으로 본 안정도, 본 시각, 손상을 처음 안 시각) =====
     private InteractionPoint[] knowledgeRooms;
@@ -513,6 +522,12 @@ public class GameManager : MonoBehaviour
                 witnesses++;
                 if (record)
                 {
+                    if (flaggedSaboteurs.Add(saboteur))
+                    {
+                        // 처음 목격됨 → 사보타주 페널티 (reward_sab_witnessed)
+                        NPCAgent sabAgent = saboteur.GetComponent<NPCAgent>();
+                        if (sabAgent != null) sabAgent.OnFirstWitnessed();
+                    }
                     if (!witnessedSaboteurs.TryGetValue(ch, out var seen))
                     {
                         seen = new HashSet<GameObject>();
@@ -744,6 +759,7 @@ public class GameManager : MonoBehaviour
         repairTotal = 0;
         sabotageInterrupted = 0;
         witnessedSaboteurs.Clear();
+        flaggedSaboteurs.Clear();
         ResetCrewKnowledge();
 
         // 원본에서 allCharacters 복원 (RemoveCharacter로 빠진 캐릭터 복구)
@@ -879,6 +895,8 @@ public class GameManager : MonoBehaviour
         botPerception       = envParams.GetWithDefault("bot_perception", botPerception);
         botReaction         = envParams.GetWithDefault("bot_reaction", botReaction);
         botChase            = envParams.GetWithDefault("bot_chase", botChase ? 1f : 0f) > 0.5f;
+        sabObsV2            = envParams.GetWithDefault("sab_obs", sabObsV2 ? 1f : 0f) > 0.5f;
+        rewardSabWitnessed  = envParams.GetWithDefault("reward_sab_witnessed", rewardSabWitnessed);
         commitMove          = envParams.GetWithDefault("commit_move", commitMove ? 1f : 0f) > 0.5f;
         autoRepair          = envParams.GetWithDefault("auto_repair", autoRepair ? 1f : 0f) > 0.5f;
         spawnSpread         = envParams.GetWithDefault("spawn_spread", spawnSpread ? 1f : 0f) > 0.5f;

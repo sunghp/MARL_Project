@@ -136,11 +136,19 @@ public class NPCAgent : Agent
         float distProgress = gameManager != null ? gameManager.GetDistanceProgress() : 0f;
         float aliveRatio   = gameManager != null ? gameManager.GetAliveHumanRatio() : 0f;
 
+        // 사보타주 관측 v2 (env param sab_obs, 관측 크기는 그대로):
+        // - 높이 칸(항상 상수) → "이번 게임에서 내가 목격당했음"
+        // - 칸별 목격 칸(사보타주는 항상 0) → 역할 표시 (함장 1, 동료 사보타주 -1)
+        // - 살아 있는 동료 사보타주의 시야도 내 시야로 친다 (방, 캐릭터)
+        bool sabV2 = isSaboteur && gameManager != null && gameManager.sabObsV2;
+        Vector3 selfObs = transform.position / mapSize;
+        if (sabV2) selfObs.y = gameManager.IsFlagged(gameObject) ? 1f : 0f;
+
         // ===================== LOCAL (Actor, 64) =====================
         // 자기 정보 (5)
         sensor.AddObservation(isSaboteur ? 1f : 0f);
         sensor.AddObservation(isCaptain ? 1f : 0f);
-        sensor.AddObservation(transform.position / mapSize);   // 3
+        sensor.AddObservation(selfObs);   // 3
 
         // 공개 게임 상태 (3)
         sensor.AddObservation(avgHealth / 100f);
@@ -156,7 +164,8 @@ public class NPCAgent : Agent
                 sensor.AddObservation(dist / mapSize);   // 거리 (공개)
 
                 bool alerted = allRooms[i].GetCurrentHealth() <= alertThreshold;
-                bool visible = (dist <= visionRange) || alerted;
+                bool visible = (dist <= visionRange) || alerted ||
+                               (sabV2 && SeenByPartner(allRooms[i].transform.position, visionRange));
 
                 if (visible)
                 {
@@ -187,19 +196,30 @@ public class NPCAgent : Agent
             GameObject ch = GetOtherSlot(k);
             bool alive = ch != null && ch.activeInHierarchy;
             bool visible = alive &&
-                Vector3.Distance(transform.position, ch.transform.position) <= visionRange;
+                (Vector3.Distance(transform.position, ch.transform.position) <= visionRange ||
+                 (sabV2 && SeenByPartner(ch.transform.position, visionRange)));
 
             sensor.AddObservation(visible ? ch.transform.position.x / mapSize : 0f);
             sensor.AddObservation(visible ? ch.transform.position.z / mapSize : 0f);
             sensor.AddObservation(visible ? 1f : 0f);
-            sensor.AddObservation(alive && gameManager.HasWitnessedSabotage(gameObject, ch) ? 1f : 0f);
+            if (sabV2)
+            {
+                float hint = 0f;
+                if (alive && roleManager != null)
+                    hint = roleManager.IsCaptain(ch) ? 1f : (roleManager.IsSaboteur(ch) ? -1f : 0f);
+                sensor.AddObservation(hint);
+            }
+            else
+            {
+                sensor.AddObservation(alive && gameManager.HasWitnessedSabotage(gameObject, ch) ? 1f : 0f);
+            }
         }
 
         // ===================== GLOBAL (Critic, 56) =====================
         // 자기 정보 (5)
         sensor.AddObservation(isSaboteur ? 1f : 0f);
         sensor.AddObservation(isCaptain ? 1f : 0f);
-        sensor.AddObservation(transform.position / mapSize);
+        sensor.AddObservation(selfObs);
 
         // 게임 상태 (3)
         sensor.AddObservation(avgHealth / 100f);
@@ -336,8 +356,27 @@ public class NPCAgent : Agent
         }
     }
 
+    // 살아 있는 동료 사보타주 중 누군가의 시야(visionRange) 안인가 (사보타주 관측 v2)
+    bool SeenByPartner(Vector3 pos, float visionRange)
+    {
+        if (gameManager == null) return false;
+        foreach (var sab in gameManager.saboteurs)
+        {
+            if (sab == null || sab == gameObject || !sab.activeInHierarchy) continue;
+            if (Vector3.Distance(sab.transform.position, pos) <= visionRange) return true;
+        }
+        return false;
+    }
+
     // ===== 셰이핑 이벤트 (GameManager/InteractionPoint/CaptainGun에서 호출) =====
     bool ControlledByPolicy() => npcController != null && npcController.IsUsingML();
+
+    /// <summary>사보타주가 이번 게임에서 처음 목격됨 (GameManager.CollectWitnesses)</summary>
+    public void OnFirstWitnessed()
+    {
+        if (isSaboteur && ControlledByPolicy() && gameManager != null)
+            AddReward(gameManager.rewardSabWitnessed);
+    }
 
     public void OnWitnessSabotage()
     {
