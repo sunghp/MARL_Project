@@ -87,6 +87,7 @@ environment_parameters:
   # 사보타주 관측/보상 실험 (sim/results/saboteur_improve). 이득이 확인되지 않아 끔
   sab_obs: 0.0                      # 1: 관측 v2 (목격당함 표시, 함장/동료 표시, 동료 시야 공유). 최종 모델은 0으로 학습됨
   reward_sab_witnessed: 0.0         # 사보타주가 처음 목격될 때 보상 (실험값 -1)
+  sab_cancel: 0.0                   # 부수기 취소 규칙: 0 없음, 1 다른 방 선택으로 취소, 2 취소 버튼(상호작용 2) (sim/results/sab_cancel, 이득 없음)
 
   # 인간팀 학습용 규칙 (balance_v4: 셰이핑 없이도 인간팀이 학습)
   commit_move: 1.0                  # 이동 중엔 새 방 선택 무시

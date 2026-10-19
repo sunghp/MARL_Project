@@ -1,0 +1,6 @@
+G1_s0 {"games": 500, "sab_win": 0.288, "dur": 70.78, "sab": 18.89, "hidden": 17.67, "rep": 6.0, "cut": 0.96, "cancel": 0.16, "shots": 1.4, "hit": 1.0, "destroy": 0.288}
+G1_s1 {"games": 500, "sab_win": 0.164, "dur": 79.95, "sab": 18.17, "hidden": 16.98, "rep": 6.68, "cut": 0.88, "cancel": 0.1, "shots": 1.4, "hit": 1.0, "destroy": 0.164}
+G2_s0 {"games": 500, "sab_win": 0.23, "dur": 84.14, "sab": 17.63, "hidden": 16.63, "rep": 6.17, "cut": 0.54, "cancel": 0.37, "shots": 1.19, "hit": 1.0, "destroy": 0.23}
+G2_s1 {"games": 500, "sab_win": 0.302, "dur": 80.43, "sab": 18.57, "hidden": 17.52, "rep": 6.04, "cut": 0.63, "cancel": 0.27, "shots": 1.22, "hit": 1.0, "destroy": 0.302}
+G3_s0 {"games": 500, "sab_win": 0.31, "dur": 79.85, "sab": 20.33, "hidden": 19.09, "rep": 6.82, "cut": 1.41, "cancel": 0.0, "shots": 1.19, "hit": 1.0, "destroy": 0.31}
+G3_s1 {"games": 500, "sab_win": 0.342, "dur": 72.87, "sab": 18.37, "hidden": 17.18, "rep": 5.66, "cut": 1.42, "cancel": 0.0, "shots": 1.32, "hit": 1.0, "destroy": 0.342}
