@@ -104,8 +104,8 @@ public class GameManager : MonoBehaviour
     public float rewardSabWitnessed = 0f;
 
     [Header("=== 부수기 취소 규칙 (env param sab_cancel) ===")]
-    [Tooltip("사보타주(ML)는 부수는 도중 다른 방을 고르면 취소하고 이동할 수 있다 (진행분은 사라짐)")]
-    public bool sabCancel = false;
+    [Tooltip("부수기 취소: 0 없음, 1 부수는 중 다른 방을 고르면 취소, 2 상호작용 2(취소 버튼) + 다른 방이면 취소. 진행분은 사라짐")]
+    public int sabCancel = 0;
 
     [Header("=== 상호작용 파라미터 ===")]
     [Tooltip("부수기 시간 (초)")]
@@ -909,7 +909,7 @@ public class GameManager : MonoBehaviour
         botChase            = envParams.GetWithDefault("bot_chase", botChase ? 1f : 0f) > 0.5f;
         sabObsV2            = envParams.GetWithDefault("sab_obs", sabObsV2 ? 1f : 0f) > 0.5f;
         rewardSabWitnessed  = envParams.GetWithDefault("reward_sab_witnessed", rewardSabWitnessed);
-        sabCancel           = envParams.GetWithDefault("sab_cancel", sabCancel ? 1f : 0f) > 0.5f;
+        sabCancel           = (int)envParams.GetWithDefault("sab_cancel", sabCancel);
         commitMove          = envParams.GetWithDefault("commit_move", commitMove ? 1f : 0f) > 0.5f;
         autoRepair          = envParams.GetWithDefault("auto_repair", autoRepair ? 1f : 0f) > 0.5f;
         spawnSpread         = envParams.GetWithDefault("spawn_spread", spawnSpread ? 1f : 0f) > 0.5f;

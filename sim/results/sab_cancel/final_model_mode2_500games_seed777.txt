@@ -1,0 +1,1 @@
+bot           {"games": 500, "sab_win": 0.406, "dur": 72.67, "sab": 19.09, "hidden": 17.77, "rep": 5.69, "cut": 1.78, "cancel": 0.19, "shots": 1.21, "hit": 1.0, "destroy": 0.406}

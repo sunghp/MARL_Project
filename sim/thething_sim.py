@@ -100,7 +100,7 @@ DEFAULT_PARAMS = {
     # 사보타주 관측/보상 개선 (기본값 = 이전 동작)
     "sab_obs": 0.0,                    # 1: 사보타주 관측 v2 (목격당함 표시, 함장/동료 표시, 동료 시야 공유). 관측 크기는 같음
     "reward_sab_witnessed": 0.0,       # 사보타주가 이번 게임에서 처음 목격될 때 보상 (음수 = 페널티)
-    "sab_cancel": 0.0,                 # 1: 사보타주는 부수는 도중 다른 방을 고르면 취소하고 이동 (진행분은 사라짐)
+    "sab_cancel": 0.0,                 # 부수기 취소: 0 없음, 1 부수는 중 다른 방을 고르면 취소, 2 상호작용 2(취소 버튼) + 다른 방이면 취소. 진행분은 사라짐
     "bot_flee": 0.0,                   # 1: 회피형 사보타주 봇도 취소 규칙을 써서 함장에게서 도망 (실험 결과 손해라 기본 끔)
     "eval_mode": 0.0,
     "frozen_team": 0.0,
@@ -494,7 +494,9 @@ class TheThingWorld:
                 return
         commit = self.p("commit_move") > 0.5
         # 부수기 취소: 부수는 중에 지금 방이 아닌 방을 고르면 그만두고 그 방으로 간다 (대기/같은 방 = 계속)
-        cancel = (c.interacting and c.sabotaging and role == SABOTEUR and self.p("sab_cancel") > 0.5
+        mode = int(self.p("sab_cancel"))
+        cancel = (c.interacting and c.sabotaging and role == SABOTEUR and mode > 0
+                  and (mode == 1 or inter == 2)
                   and room_choice < MAX_ROOMS and (c.room is None or room_choice != c.room.idx))
         if cancel:
             self.sab_cancelled += 1

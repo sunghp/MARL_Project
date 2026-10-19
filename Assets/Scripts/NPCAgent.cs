@@ -288,7 +288,9 @@ public class NPCAgent : Agent
         bool movingLocked = gameManager.commitMove && npcController.IsMovingToRoom();
         // 부수기 취소 (env param sab_cancel): 부수는 중에 지금 방이 아닌 방을 고르면 그만두고 그 방으로 간다
         // (대기 8 또는 같은 방 = 계속 부숨). 진행분은 사라진다.
-        bool cancelSabotage = gameManager.sabCancel && isSaboteur &&
+        // 모드 1: 방 선택만으로 취소 / 모드 2: 상호작용 2(취소 버튼)를 함께 골라야 취소
+        bool cancelSabotage = gameManager.sabCancel > 0 &&
+            (gameManager.sabCancel == 1 || interactionChoice == 2) && isSaboteur &&
             npcController.IsInteracting() && npcController.isSabotaging &&
             roomChoice < allRooms.Length && allRooms[roomChoice] != null &&
             allRooms[roomChoice] != npcController.GetTargetRoom();
