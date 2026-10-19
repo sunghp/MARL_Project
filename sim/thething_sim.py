@@ -100,6 +100,8 @@ DEFAULT_PARAMS = {
     # 사보타주 관측/보상 개선 (기본값 = 이전 동작)
     "sab_obs": 0.0,                    # 1: 사보타주 관측 v2 (목격당함 표시, 함장/동료 표시, 동료 시야 공유). 관측 크기는 같음
     "reward_sab_witnessed": 0.0,       # 사보타주가 이번 게임에서 처음 목격될 때 보상 (음수 = 페널티)
+    "sab_cancel": 0.0,                 # 1: 사보타주는 부수는 도중 다른 방을 고르면 취소하고 이동 (진행분은 사라짐)
+    "bot_flee": 0.0,                   # 1: 회피형 사보타주 봇도 취소 규칙을 써서 함장에게서 도망 (실험 결과 손해라 기본 끔)
     "eval_mode": 0.0,
     "frozen_team": 0.0,
 }
@@ -236,6 +238,7 @@ class TheThingWorld:
         self.sab_hidden = 0
         self.repair_total = 0
         self.sab_interrupted = 0
+        self.sab_cancelled = 0                 # 사보타주가 스스로 취소한 부수기
         self.witness_events = 0
         self.witnessed = {}
         self.flagged = set()                   # 이번 게임에서 인간팀에게 목격된 사보타주
@@ -490,7 +493,13 @@ class TheThingWorld:
             if self.game_over or not c.active:
                 return
         commit = self.p("commit_move") > 0.5
-        if not c.interacting and room_choice < MAX_ROOMS and not (commit and c.state == "moving"):
+        # 부수기 취소: 부수는 중에 지금 방이 아닌 방을 고르면 그만두고 그 방으로 간다 (대기/같은 방 = 계속)
+        cancel = (c.interacting and c.sabotaging and role == SABOTEUR and self.p("sab_cancel") > 0.5
+                  and room_choice < MAX_ROOMS and (c.room is None or room_choice != c.room.idx))
+        if cancel:
+            self.sab_cancelled += 1
+            self._move_to_room(c, self.rooms[room_choice])
+        elif not c.interacting and room_choice < MAX_ROOMS and not (commit and c.state == "moving"):
             self._move_to_room(c, self.rooms[room_choice])
         near_rng = self.p("repair_range") if inter == 2 else 2.0
         if inter in (1, 2) and not c.interacting and self._near(c, near_rng):
@@ -834,6 +843,7 @@ class TheThingWorld:
                 "sab_hidden": self.sab_hidden,
                 "repairs": self.repair_total,
                 "sab_interrupted": self.sab_interrupted,
+                "sab_cancelled": self.sab_cancelled,
                 "witness_events": self.witness_events,
                 "captain_flags": len(self.witnessed.get(self.captain.idx, ())) if self.captain else 0,
                 "shots": self.shots,
@@ -1007,6 +1017,16 @@ class TheThingWorld:
                 c.state = "moving"
                 return
         if c.interacting:
+            # 회피형 사보타주 봇: 부수기 취소 규칙이 있으면, 목격당한 상태에서 함장이 다가오면 그만두고 도망
+            if (not crew and c.sabotaging and self.p("sab_cancel") > 0.5 and self.p("bot_flee") > 0.5
+                    and self.total_ticks % 10 == 0 and self._captain_threat(c)):
+                self.sab_cancelled += 1
+                self._cancel(c)
+                self._flee(c)
+            return
+        if not crew and self.p("sab_cancel") > 0.5 and self.p("bot_flee") > 0.5 and self._captain_threat(c):
+            if c.state != "moving" or c.bot_target is None or self._near_captain(c.bot_target.pos):
+                self._flee(c)                    # 이동 중에도 함장 쪽 방으로 가고 있으면 방향을 바꾼다
             return
         if c.state == "moving":
             # 이동 중 재지정: 아무도 맡지 않은 손상 방이 생겼고 내가 가장 가까운 '한가한' 인간팀이면 방향을 바꾼다
@@ -1075,6 +1095,27 @@ class TheThingWorld:
             danger = sum(1 for o in crew if dist(o.pos, r.pos) <= 25.0)
             return (danger, dist(c.pos, r.pos) + (100.0 if r is avoid else 0.0))
         return min(cand, key=key)
+
+    def _captain_threat(self, c):
+        """목격당했고(함장이 근거를 가짐) 살아 있는 함장이 사거리 + 5 안에 있다"""
+        cap = self.captain
+        if cap is None or not cap.active or cap.bullets <= 0 or c.idx not in self.flagged:
+            return False
+        rng = self.p("shoot_range") if self.p("shoot_range") > 0 else self.p("vision_range")
+        return dist(c.pos, cap.pos) <= rng + 5.0
+
+    def _near_captain(self, pos):
+        cap = self.captain
+        rng = self.p("shoot_range") if self.p("shoot_range") > 0 else self.p("vision_range")
+        return cap is not None and cap.active and dist(cap.pos, pos) <= rng + 5.0
+
+    def _flee(self, c):
+        """함장에게서 가장 먼 방(동료 목표 제외)으로 간다. 도착하면 다시 부수기를 노린다"""
+        cap = self.captain
+        taken = {o.bot_target for o in self.saboteurs if o is not c}
+        cand = [r for r in self.rooms if r not in taken and r.health > 0] or list(self.rooms)
+        c.bot_target = max(cand, key=lambda r: dist(r.pos, cap.pos) - 0.3 * dist(r.pos, c.pos))
+        self._go(c, c.bot_target, sab=True)
 
     def _sab_decide(self, c):
         t = c.bot_target

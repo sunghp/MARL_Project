@@ -103,6 +103,10 @@ public class GameManager : MonoBehaviour
     [Tooltip("사보타주가 이번 게임에서 처음 목격될 때 보상 (음수 = 페널티)")]
     public float rewardSabWitnessed = 0f;
 
+    [Header("=== 부수기 취소 규칙 (env param sab_cancel) ===")]
+    [Tooltip("사보타주(ML)는 부수는 도중 다른 방을 고르면 취소하고 이동할 수 있다 (진행분은 사라짐)")]
+    public bool sabCancel = false;
+
     [Header("=== 상호작용 파라미터 ===")]
     [Tooltip("부수기 시간 (초)")]
     public float sabotageTime = 3f;
@@ -178,6 +182,7 @@ public class GameManager : MonoBehaviour
     private int sabotageHidden = 0;
     private int repairTotal = 0;   // 에피소드당 수리 완료 횟수 (활동량 지표)
     private int sabotageInterrupted = 0;   // 수리로 끊긴 부수기 횟수
+    private int sabotageCancelled = 0;     // 사보타주가 스스로 취소한 부수기 횟수
 
     // ===== 목격 기록: 관찰자 → 부수는 걸 직접 본 캐릭터들 (에피소드 단위) =====
     private Dictionary<GameObject, HashSet<GameObject>> witnessedSaboteurs =
@@ -247,6 +252,7 @@ public class GameManager : MonoBehaviour
         recorder.Add("behavior/sabotage_count", (float)sabotageTotal);
         recorder.Add("behavior/repair_count", (float)repairTotal);
         recorder.Add("behavior/sabotage_interrupted", (float)sabotageInterrupted);
+        recorder.Add("behavior/sabotage_cancelled", (float)sabotageCancelled);
 
         // 승패 결과: 트레이너가 승률 집계 + 죽은 에이전트(재활성화 시 새 episode id라 보상을 못 받음)의
         // 게임 종료 보상 귀속에 사용
@@ -580,6 +586,11 @@ public class GameManager : MonoBehaviour
         sabotageInterrupted++;
     }
 
+    public void RecordSabotageCancelled()
+    {
+        sabotageCancelled++;
+    }
+
     // ===== 평가 모드: 팀별 제어 모드 적용 =====
     // frozenTeam: 0=없음(전원 ML), 1=사보타주 고정(규칙봇), 2=인간팀 고정(규칙봇), 3=전원 규칙봇
     // 고정된 팀은 규칙봇(NPCAIBrain)이, 나머지 팀은 학습 정책(ML)이 제어 → 학습팀의 절대 실력 측정
@@ -758,6 +769,7 @@ public class GameManager : MonoBehaviour
         sabotageHidden = 0;
         repairTotal = 0;
         sabotageInterrupted = 0;
+        sabotageCancelled = 0;
         witnessedSaboteurs.Clear();
         flaggedSaboteurs.Clear();
         ResetCrewKnowledge();
@@ -897,6 +909,7 @@ public class GameManager : MonoBehaviour
         botChase            = envParams.GetWithDefault("bot_chase", botChase ? 1f : 0f) > 0.5f;
         sabObsV2            = envParams.GetWithDefault("sab_obs", sabObsV2 ? 1f : 0f) > 0.5f;
         rewardSabWitnessed  = envParams.GetWithDefault("reward_sab_witnessed", rewardSabWitnessed);
+        sabCancel           = envParams.GetWithDefault("sab_cancel", sabCancel ? 1f : 0f) > 0.5f;
         commitMove          = envParams.GetWithDefault("commit_move", commitMove ? 1f : 0f) > 0.5f;
         autoRepair          = envParams.GetWithDefault("auto_repair", autoRepair ? 1f : 0f) > 0.5f;
         spawnSpread         = envParams.GetWithDefault("spawn_spread", spawnSpread ? 1f : 0f) > 0.5f;

@@ -106,7 +106,7 @@ def summary(log):
     return {
         "sab_win": round(1 - float(np.mean([g["human_win"] for g in log])), 3),
         "dur": m("duration"), "sab": m("sab_total"), "hidden": m("sab_hidden"), "rep": m("repairs"),
-        "cut": m("sab_interrupted"), "shots": m("shots"),
+        "cut": m("sab_interrupted"), "cancel": m("sab_cancelled"), "shots": m("shots"),
         "hit": round(float(np.sum([g["shots_hit"] for g in log]) / max(1, np.sum([g["shots"] for g in log]))), 2),
         "reasons": dict(reasons.most_common(4)),
     }

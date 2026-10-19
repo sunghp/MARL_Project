@@ -286,7 +286,18 @@ public class NPCAgent : Agent
         // 상호작용 진행 중이면 이동 명령 무시 (중단 방지)
         // commitMove: 방으로 이동 중이면 새 방 선택 무시 (무작위 정책도 실제로 방에 도착할 수 있게)
         bool movingLocked = gameManager.commitMove && npcController.IsMovingToRoom();
-        if (!npcController.IsInteracting() && !movingLocked &&
+        // 부수기 취소 (env param sab_cancel): 부수는 중에 지금 방이 아닌 방을 고르면 그만두고 그 방으로 간다
+        // (대기 8 또는 같은 방 = 계속 부숨). 진행분은 사라진다.
+        bool cancelSabotage = gameManager.sabCancel && isSaboteur &&
+            npcController.IsInteracting() && npcController.isSabotaging &&
+            roomChoice < allRooms.Length && allRooms[roomChoice] != null &&
+            allRooms[roomChoice] != npcController.GetTargetRoom();
+        if (cancelSabotage)
+        {
+            gameManager.RecordSabotageCancelled();
+            npcController.MoveToRoom(allRooms[roomChoice]);   // MoveToRoom이 진행 중인 부수기를 취소한다
+        }
+        else if (!npcController.IsInteracting() && !movingLocked &&
             roomChoice < allRooms.Length && allRooms[roomChoice] != null)
         {
             npcController.MoveToRoom(allRooms[roomChoice]);

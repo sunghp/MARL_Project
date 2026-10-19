@@ -1,0 +1,12 @@
+== sab_cancel=1, 규칙봇 도주 끔
+random   {"sab_win": 0.0, "dur": 99.78, "sab": 0.0, "hidden": 0.0, "rep": 0.0, "cut": 0.0, "cancel": 1.1, "shots": 0.09, "hit": 1.0, "reasons": {"목적지 도착": 497, "모든 사보타주 제거": 3}}
+camper   {"sab_win": 0.176, "dur": 90.5, "sab": 14.64, "hidden": 13.13, "rep": 4.64, "cut": 3.44, "cancel": 2.92, "shots": 1.25, "hit": 1.0, "reasons": {"목적지 도착": 242, "모든 사보타주 제거": 170, "방 파괴": 88}}
+focus    {"sab_win": 0.052, "dur": 78.81, "sab": 7.25, "hidden": 6.09, "rep": 2.19, "cut": 2.42, "cancel": 1.61, "shots": 1.55, "hit": 1.0, "reasons": {"모든 사보타주 제거": 357, "목적지 도착": 117, "방 파괴": 26}}
+evasive  {"sab_win": 0.118, "dur": 95.64, "sab": 12.54, "hidden": 12.45, "rep": 3.93, "cut": 0.0, "cancel": 4.03, "shots": 1.03, "hit": 1.0, "reasons": {"목적지 도착": 321, "모든 사보타주 제거": 120, "방 파괴": 59}}
+rulebot  {"sab_win": 0.422, "dur": 74.91, "sab": 24.4, "hidden": 22.9, "rep": 8.01, "cut": 1.12, "cancel": 0.0, "shots": 1.31, "hit": 1.0, "reasons": {"방 파괴": 211, "모든 사보타주 제거": 205, "목적지 도착": 84}}
+== sab_cancel=1, 규칙봇 도주 켬 (bot_flee=1)
+random   {"sab_win": 0.0, "dur": 99.78, "sab": 0.0, "hidden": 0.0, "rep": 0.0, "cut": 0.0, "cancel": 1.1, "shots": 0.09, "hit": 1.0, "reasons": {"목적지 도착": 497, "모든 사보타주 제거": 3}}
+camper   {"sab_win": 0.176, "dur": 90.5, "sab": 14.64, "hidden": 13.13, "rep": 4.64, "cut": 3.44, "cancel": 2.92, "shots": 1.25, "hit": 1.0, "reasons": {"목적지 도착": 242, "모든 사보타주 제거": 170, "방 파괴": 88}}
+focus    {"sab_win": 0.052, "dur": 78.81, "sab": 7.25, "hidden": 6.09, "rep": 2.19, "cut": 2.42, "cancel": 1.61, "shots": 1.55, "hit": 1.0, "reasons": {"모든 사보타주 제거": 357, "목적지 도착": 117, "방 파괴": 26}}
+evasive  {"sab_win": 0.118, "dur": 95.64, "sab": 12.54, "hidden": 12.45, "rep": 3.93, "cut": 0.0, "cancel": 4.03, "shots": 1.03, "hit": 1.0, "reasons": {"목적지 도착": 321, "모든 사보타주 제거": 120, "방 파괴": 59}}
+rulebot  {"sab_win": 0.274, "dur": 65.87, "sab": 20.72, "hidden": 19.78, "rep": 7.1, "cut": 0.69, "cancel": 1.07, "shots": 1.56, "hit": 1.0, "reasons": {"모든 사보타주 제거": 336, "방 파괴": 137, "목적지 도착": 27}}

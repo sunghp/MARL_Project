@@ -117,7 +117,7 @@ def summary(log):
         "games": len(log),
         "sab_win": round(1 - float(np.mean([g["human_win"] for g in log])), 3),
         "dur": m("duration"), "sab": m("sab_total"), "hidden": m("sab_hidden"), "rep": m("repairs"),
-        "cut": m("sab_interrupted"), "shots": m("shots"),
+        "cut": m("sab_interrupted"), "cancel": m("sab_cancelled"), "shots": m("shots"),
         "hit": round(sum(g["shots_hit"] for g in log) / shots, 2) if shots else None,
         "destroy": round(float(np.mean(["파괴" in g["reason"] for g in log])), 3),
     }
