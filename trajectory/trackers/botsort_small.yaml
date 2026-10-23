@@ -1,0 +1,13 @@
+# BoT-SORT = ByteTrack + 카메라 움직임 보정(gmc). 카메라가 물체를 따라간 영상이면 이것을 쓴다.
+tracker_type: botsort
+track_high_thresh: 0.2
+track_low_thresh: 0.05
+new_track_thresh: 0.1
+track_buffer: 30
+match_thresh: 0.95
+fuse_score: True
+gmc_method: sparseOptFlow  # 배경 특징점으로 카메라 이동 추정
+proxy_thresh: 0.5
+appearance_thresh: 0.8
+with_reid: False
+model: auto

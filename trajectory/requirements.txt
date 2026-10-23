@@ -1,0 +1,7 @@
+numpy
+pandas
+scipy
+opencv-python
+pyarrow
+ultralytics  # yolo 방식에만 필요
+pytest       # 테스트용

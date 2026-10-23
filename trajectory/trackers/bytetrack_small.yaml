@@ -1,0 +1,8 @@
+# ByteTrack, 작은 물체·오탐 트랙 수집용 설정 (Ultralytics 기본값 대비 변경한 값에 주석)
+tracker_type: bytetrack
+track_high_thresh: 0.2   # 기본 0.25. 1단계 매칭에 쓰는 높은 점수 기준
+track_low_thresh: 0.05   # 기본 0.1. 낮은 점수 박스도 2단계에서 기존 트랙에 잇는다
+new_track_thresh: 0.1    # 기본 0.25. 낮춰야 오탐(none) 트랙이 생긴다
+track_buffer: 30         # 탐지가 빠져도 30프레임(약 1초)까지 트랙 유지
+match_thresh: 0.95       # 기본 0.8. 작은 물체는 IoU가 작아도 잇도록 완화
+fuse_score: True
